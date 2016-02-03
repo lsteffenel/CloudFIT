@@ -15,20 +15,14 @@ package cloudfit.service;
 import cloudfit.application.ApplicationInterface;
 import cloudfit.application.Distributed;
 import cloudfit.core.TheBigFactory;
+import cloudfit.network.JarLoader;
 import cloudfit.storage.DHTStorageUnit;
 import cloudfit.storage.FileContainer;
 import cloudfit.util.Number160;
-import cloudfit.util.PropertiesUtil;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.logging.Level;
@@ -105,25 +99,28 @@ public class JobsContainer extends Thread implements Serializable {
 
                     FileContainer fr = (FileContainer) titi.getContent();
 
-                    String DHTdir = PropertiesUtil.getProperty("DHTDir");
+                    ClassLoader loader = new JarLoader(fr.getContent());
 
-                    File myDir = new File(DHTdir + "/" + jobId);
-
-                    if (!myDir.exists()) {
-                        myDir.mkdirs();
-                    }
-
-                    FileOutputStream fis;
-                    File file = new File(myDir.getAbsolutePath() + "/" + fr.getName());
-                    fis = new FileOutputStream(file);
-                    fis.write(fr.getContent());
-                    fis.flush();
-                    fis.close();
-
-                    URL url = file.toURI().toURL();
-
-                    ClassLoader loader = URLClassLoader.newInstance(new URL[]{url}, getClass().getClassLoader());
+//                    String DHTdir = PropertiesUtil.getProperty("DHTDir");
+//
+//                    File myDir = new File(DHTdir + "/" + jobId);
+//
+//                    if (!myDir.exists()) {
+//                        myDir.mkdirs();
+//                    }
+//
+//                    FileOutputStream fis;
+//                    File file = new File(myDir.getAbsolutePath() + "/" + fr.getName());
+//                    fis = new FileOutputStream(file);
+//                    fis.write(fr.getContent());
+//                    fis.flush();
+//                    fis.close();
+//
+//                    URL url = file.toURI().toURL();
+//
+//                    ClassLoader loader = URLClassLoader.newInstance(new URL[]{url}, getClass().getClassLoader());
                     Class<?> clazz = Class.forName(obj.getApp(), true, loader);
+
                     Class<? extends ApplicationInterface> runClass = clazz.asSubclass(Distributed.class);
                     // Avoid Class.newInstance, for it is evil.
                     Constructor<? extends ApplicationInterface> ctor = runClass.getConstructor();
@@ -139,8 +136,8 @@ public class JobsContainer extends Thread implements Serializable {
                     TS.setOriginalMsg(obj);
                     this.Jobs.add(TS);
                 }
-            } catch (MalformedURLException ex) {
-                Logger.getLogger(JobsContainer.class.getName()).log(Level.SEVERE, null, ex);
+//            } catch (MalformedURLException ex) {
+//                Logger.getLogger(JobsContainer.class.getName()).log(Level.SEVERE, null, ex);
             } catch (ClassNotFoundException ex) {
                 Logger.getLogger(JobsContainer.class.getName()).log(Level.SEVERE, null, ex);
             } catch (NoSuchMethodException ex) {
@@ -156,10 +153,12 @@ public class JobsContainer extends Thread implements Serializable {
             } catch (InvocationTargetException ex) {
                 Logger.getLogger(JobsContainer.class.getName()).log(Level.SEVERE, null, ex);
 
-            } catch (FileNotFoundException ex) {
-                Logger.getLogger(this.getName()).log(Level.SEVERE, null, ex);
+//            } catch (FileNotFoundException ex) {
+//                Logger.getLogger(this.getName()).log(Level.SEVERE, null, ex);
+//            } catch (IOException ex) {
+//                Logger.getLogger(this.getName()).log(Level.SEVERE, null, ex);
             } catch (IOException ex) {
-                Logger.getLogger(this.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(JobsContainer.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
 
