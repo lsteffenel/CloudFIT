@@ -106,6 +106,7 @@ public class ThreadSolve implements JobManagerInterface {
 
     }
 
+    @SuppressWarnings("empty-statement")
     public void run() {
         //this.setName("CoreQueue");
         Thread.currentThread().setName("ThreadSolve " + jobId);
@@ -125,14 +126,14 @@ public class ThreadSolve implements JobManagerInterface {
         }
 
         try {
-            while (!executor.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS));
+            while (!executor.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS)){};
         } catch (InterruptedException ex) {
             Logger.getLogger(ThreadSolve.class.getName()).log(Level.SEVERE, null, ex);
         }
 
         System.err.println("");
         this.setFinished(true);
-        setStatus(COMPLETED);
+        //setStatus(COMPLETED);
         //status = 2;
         getAvailable().release();
 
@@ -152,7 +153,9 @@ public class ThreadSolve implements JobManagerInterface {
             if (weHaveAllResults) {
                 System.err.println("We have all results, no need to wait the Workers");
                 //executor.shutdownNow();
-                executor.shutdown();
+                setStatus(COMPLETED);
+                //executor.shutdown();
+                executor.shutdownNow();
                 getAvailable().release();
             }
         }
@@ -170,8 +173,6 @@ public class ThreadSolve implements JobManagerInterface {
             // call Scheduler to retrive all task results and compose a single accumulator
         }
         System.err.println("&&&&&&&&&&&&&&& Finalizing " + scheduler.size());
-
-        System.err.println(" &&&&& Finalized");
     }
 
     // Getters and Setters

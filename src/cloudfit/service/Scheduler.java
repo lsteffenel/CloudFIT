@@ -172,8 +172,10 @@ public class Scheduler {
         TaskStatus currentTask;
         TaskStatusMessage incomingTask;
         incomingTask = (TaskStatusMessage) obj;
+        int done = 0;
         //if (!Finished) {
         for (int i = 0; i < taskList.size(); ++i) {
+            
             currentTask = taskList.get(i);
             if (currentTask.getTaskId() == ((TaskStatusMessage) obj).getTaskId()) {
                 if (incomingTask.getStatus() == TaskStatus.STARTED) {
@@ -199,9 +201,15 @@ public class Scheduler {
                     }
                 }
             }
+            if (currentTask.getStatus()==TaskStatus.COMPLETED)
+            {
+                done++;
+            }
         }
         boolean weHaveAllResults = false;
-        weHaveAllResults = (completed == taskList.size());
+        weHaveAllResults = (done == taskList.size());
+
+        //weHaveAllResults = (completed == taskList.size());
 
         return weHaveAllResults;
     }
