@@ -130,13 +130,13 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
             //String sid =   iface.getHardwareAddress().toString() + " ";
             byte[] mac = iface.getHardwareAddress();
             StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < mac.length; i++) {
-            sb.append(String.format("%02X%s", mac[i], (i < mac.length - 1) ? "-" : ""));        
-        }
+            for (int i = 0; i < mac.length; i++) {
+                sb.append(String.format("%02X%s", mac[i], (i < mac.length - 1) ? "-" : ""));
+            }
             //System.err.println(iface.getDisplayName() + " " + sb.toString() );
-            String sid = sb.toString() + " " + iface.getInetAddresses().nextElement().getHostAddress() + " "+ port;
+            String sid = sb.toString() + " " + iface.getInetAddresses().nextElement().getHostAddress() + " " + port;
             Number160 id = Number160.createHash(sid);
-            System.err.println(sid+"\n"+id);
+            System.err.println(sid + "\n" + id);
 
             String path = "/tmp/tom-" + id;
 
@@ -162,7 +162,7 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
                     File storagePath = new File(path);
                     //System.err.println("Exists or not ? "+ storagePath.exists());
                     if (!storagePath.exists()) {
-                        System.err.println("creating dir");
+                        //System.err.println("creating dir");
                         storagePath.mkdirs();
                     }
                     //System.err.println("Exists or not ? "+ storagePath.exists());
@@ -171,14 +171,14 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
                     //DBase = DBMaker.newFileDB(new File(storagePath,"tomp2p")).transactionDisable().closeOnJvmShutdown().make();
                     //DBase = DBMaker.newFileDB(new File(storagePath,"tomp2p")).transactionDisable().cacheSoftRefEnable().closeOnJvmShutdown().sizeLimit(1024*1024*1024*1024).make();
                     //DBase = DBMaker.newFileDB(new File(storagePath,"tomp2p")).transactionDisable().cacheSoftRefEnable().closeOnJvmShutdown().make();
-                    File base = new File(storagePath, "tomp2p_"+id);
+                    File base = new File(storagePath, "tomp2p_" + id);
                     //DBase = DBMaker.newFileDB(base).transactionDisable().asyncWriteEnable().cacheSoftRefEnable().closeOnJvmShutdown().make();
-                //DBase = DBMaker.newFileDB(base).cacheDisable().closeOnJvmShutdown().make();
+                    //DBase = DBMaker.newFileDB(base).cacheDisable().closeOnJvmShutdown().make();
 
                     //DBase = DBMaker.newFileDB(base).mmapFileEnableIfSupported().asyncWriteEnable().cacheSoftRefEnable().transactionDisable().closeOnJvmShutdown().make();
                     DBase = DBMaker.newFileDB(base).transactionDisable().cacheSoftRefEnable().closeOnJvmShutdown().make();
                     //StorageDisk sd = new StorageDisk(DBase, id, storagePath, new DSASignatureFactory(), 60 * 1000);
-                    
+
                     StorageDisk sd = new StorageDisk(DBase, id, storagePath, new DSASignatureFactory(), 10 * 1000);
 
                     pbd.storage(sd);
@@ -203,17 +203,8 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
 
                 }
             }
-//            
+            //System.err.println("Slow = " + peer.peerAddress().isSlow());
 
-//            //IndirectReplication indir = new IndirectReplication(peer).replicationFactor(1).keepData(false);
-//            IndirectReplication indir = new IndirectReplication(peer);
-//            indir.autoReplication(true);
-//            indir.addReplicationFilter(new SlowReplicationFilter());
-//            indir.start();
-            System.err.println("Slow = " + peer.peerAddress().isSlow());
-
-            //peer.peerAddress().changeSlow(true);
-            //new IndirectReplication(peer).start();
             if (add != null) { // one cannot bootstrap to itself !!!
                 System.err.println("discovery to " + add.getAddress() + " " + add.getPort());
                 //FutureDiscover futureDiscover = peer.peer().discover().inetSocketAddress(add.getAddress(), add.getPort()).start();
@@ -248,10 +239,15 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
 
             }
             // delivery method
+            
             peer.peer().objectDataReply(new ObjectDataReply() {
                 @Override
                 public Object reply(final PeerAddress sender, final Object request) throws Exception {
+                    
+                        
                     TomP2PMessage P2Pmsg = (TomP2PMessage) request;
+                    
+                    /*
                     if (P2Pmsg.getType() == TomP2PMessage.BCAST) {
                         if (history.containsKey(P2Pmsg.getSenderId())) {
                             TreeSet ts = history.get(P2Pmsg.getSenderId());
@@ -261,40 +257,41 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
                             } else {
                                 //System.err.println("unknown seq");
                                 ts.add(P2Pmsg.getSequenceNumber());
-                                
-                                //bbcast(P2Pmsg);
 
+                                bbcast(P2Pmsg);
                             }
                         } else {
                             //System.err.println("unknown unknown sender");
                             TreeSet ts = new TreeSet();
                             ts.add(P2Pmsg.getSequenceNumber());
                             history.put(P2Pmsg.getSenderId(), ts);
-                            //bbcast(P2Pmsg);
+                            bbcast(P2Pmsg);
 
                         }
-                    }
-                    //System.err.println("msg arrived");
+                    }*/
+                    //System.err.println("msg arrived --> "+((Message)P2Pmsg.getContent()).content.getClass());
+            
                     contentDelivery((Message) P2Pmsg.getContent());
+                    
                     return "ack";
                 }
 
-                private void bbcast(TomP2PMessage P2Pmsg) {
-                    List<PeerAddress> neighs = peer.peerBean().peerMap().all();
-                    Iterator it = neighs.iterator();
-                    while (it.hasNext()) {
-                        PeerAddress p1 = (PeerAddress) it.next();
-                        //System.err.println(p1.toString());
-                        //peer.peer().sendDirect(p1).object("test").start();
-
-                        // send direct
-                        FutureDirect futureData;
-                        futureData = peer.peer().sendDirect(p1).object(P2Pmsg).start();
-                        // blocking send one by one... what about a listener after all sends were sent ??
-//            futureData.awaitUninterruptibly();
-
-                    }
-                }
+//                private void bbcast(TomP2PMessage P2Pmsg) {
+//                    List<PeerAddress> neighs = peer.peerBean().peerMap().all();
+//                    Iterator it = neighs.iterator();
+//                    while (it.hasNext()) {
+//                        PeerAddress p1 = (PeerAddress) it.next();
+//                        //System.err.println(p1.toString());
+//                        //peer.peer().sendDirect(p1).object("test").start();
+//
+//                        // send direct
+//                        FutureDirect futureData;
+//                        futureData = peer.peer().sendDirect(p1).object(P2Pmsg).start();
+//                        // blocking send one by one... what about a listener after all sends were sent ??
+////            futureData.awaitUninterruptibly();
+//
+//                    }
+//                }
 
             });
 
@@ -310,7 +307,7 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
 
     private NetworkInterface ifDetect() throws IOException {
 
-        System.setProperty("java.net.preferIPv4Stack" , "true");
+        System.setProperty("java.net.preferIPv4Stack", "true");
         NetworkInterface theOne = null;
         // iterate over the network interfaces known to java
         Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
@@ -449,26 +446,35 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
 //    }
     public void contentDelivery(Message element) {
         try {
-            //System.err.println("Delivery : ");
+            
+            MsgQueue.put(element);
+            
+            /*
+            //System.err.println("Delivery : "+element.content.getClass());
             //Message element = ((EasyPastryContent) content).getContent();
 
             // only TaskStatusMessages are intercepted here
             if (element.content.getClass() == TaskStatusMessage.class) {
 
-                if (community.hasJob(
-                        ((TaskStatusMessage) element.content).getJobId())) {
-                    if (community.needData(((TaskStatusMessage) element.content).getJobId(), ((TaskStatusMessage) element.content).getTaskId())) {
-                        //System.err.println("Sending it up!!!");
-                        MsgQueue.put(element);
-                    }
+                if (community.hasJob(((TaskStatusMessage) element.content).getJobId())) {
+                    MsgQueue.put(element);
+                    
+//                    if (community.needData(((TaskStatusMessage) element.content).getJobId(), ((TaskStatusMessage) element.content).getTaskId())) {
+//                        //System.err.println("Sending it up!!!");
+//                        MsgQueue.put(element);
+//                    } else {
+//                        //probably my own taskstatusmessage sent to all
+//                        //System.out.println("ignoring it");
+//                    }
                 } else { // unknown job, let the "Join" part work
                     MsgQueue.put(element);
+                    //       System.out.println("a job to go?");
                 }
             } else {
                 //System.err.println("Another msg incoming " + element.content.getClass());
                 MsgQueue.put(element);
 
-            }
+            }*/
 
         } catch (InterruptedException ex) {
             Logger.getLogger(EasyPastryDHTAdapter.class
@@ -493,13 +499,6 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
             // blocking send... what about a listener ?
             futureData.awaitUninterruptibly();
 
-//            try {
-//                System.err.println("reply [" + futureData.object() + "]");
-//            } catch (ClassNotFoundException ex) {
-//                Logger.getLogger(TomP2PAdapter.class.getName()).log(Level.SEVERE, null, ex);
-//            } catch (IOException ex) {
-//                Logger.getLogger(TomP2PAdapter.class.getName()).log(Level.SEVERE, null, ex);
-//            }
         }
     }
 
@@ -530,17 +529,14 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
     }
 
     @Override
-    public void sendAll(Message msg) {
-        //System.err.println("new SendAll");
+    public void sendAll(Message msg, boolean metoo) {
+        //System.err.println("new SendAll " + msg.content.getClass());
         List<PeerAddress> neighs = peer.peerBean().peerMap().all();
         // replace seqnum++ by the timestap: prevents a "reincarnated" node to reuse the same seqnums
         TomP2PMessage P2Pmsg = new TomP2PMessage(TomP2PMessage.BCAST, peer.peerID(), System.currentTimeMillis(), msg);
         Iterator it = neighs.iterator();
         while (it.hasNext()) {
             PeerAddress p1 = (PeerAddress) it.next();
-            //System.err.println(p1.toString());
-            //peer.peer().sendDirect(p1).object("test").start();
-
             // send direct
             FutureDirect futureData;
             futureData = peer.peer().sendDirect(p1).object(P2Pmsg).start();
@@ -548,27 +544,13 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
             //futureData.awaitUninterruptibly();
 
         }
-        PeerAddress p1 = peer.peerAddress();
-        FutureDirect futureData;
-        futureData = peer.peer().sendDirect(p1).object(P2Pmsg).start();
+        if (metoo) {
+            PeerAddress p1 = peer.peerAddress();
+            FutureDirect futureData;
+            futureData = peer.peer().sendDirect(p1).object(P2Pmsg).start();
+        }
     }
 
-//    private void bbcast(TomP2PMessage P2Pmsg) {
-//        List<PeerAddress> neighs = peer.peerBean().peerMap().all();
-//        Iterator it = neighs.iterator();
-//        while (it.hasNext()) {
-//            PeerAddress p1 = (PeerAddress) it.next();
-//            System.err.println(p1.toString());
-//            //peer.peer().sendDirect(p1).object("test").start();
-//
-//            // send direct
-//            FutureDirect futureData;
-//            futureData = peer.peer().sendDirect(p1).object(P2Pmsg).start();
-//            // blocking send one by one... what about a listener after all sends were sent ??
-////            futureData.awaitUninterruptibly();
-//
-//        }
-//    }
     @Override
     public void save(String key, Serializable value, boolean mutable) {
         try {
@@ -584,11 +566,7 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
     @Override
     public void blocking_save(String key, Serializable value, boolean mutable) {
         try {
-            //peer.put(Number160.createHash(key)).data(new Data(value)).start().awaitUninterruptibly();
-            //RequestP2PConfiguration rp = new RequestP2PConfiguration(1, 0, 0);
             Data dt = new Data(value);
-            //PutBuilder pb = peer.put(Number160.createHash(key)).requestP2PConfiguration(rp).data(dt);
-            //PutBuilder pb = peer.put(Number160.ZERO).requestP2PConfiguration(rp).data(Number160.createHash(key),dt);
             PutBuilder pb = peer.put(Number160.createHash(key)).data(dt);
             if (spf != null) {
                 pb.addPostRoutingFilter(spf);
@@ -622,8 +600,6 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
         futureDHT.awaitUninterruptibly();
         if (futureDHT.isSuccess()) {
 
-            //return (FileContent) futureDHT.getData().getObject();
-            //return (Serializable) futureDHT.dataMap().values().iterator().next().object();
             Object obj;
             try {
                 obj = futureDHT.data().object();

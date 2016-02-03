@@ -10,30 +10,26 @@
  * 
  * *************************************************************** *
  */
-
 package cloudfit.core;
 
 import cloudfit.service.ServiceInterface;
 import java.util.HashMap;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Active queue associated to the Protocol-level ORB, receives messages from
- * the network level and deliver them to the service level through the Observer pattern
- * @author steffenel 
- * uses locks/conditions from http://docs.oracle.com/javase/1.5.0/docs/api/java/util/concurrent/locks/Condition.html
+ * Active queue associated to the Protocol-level ORB, receives messages from the
+ * network level and deliver them to the service level through the Observer
+ * pattern
+ *
+ * @author steffenel doesn't use locks anymore as the LinkedBlockingQueue
+ * provides safety
  */
 public class CoreQueue extends Thread {
 
     private LinkedBlockingQueue<Message> messageList;
     private HashMap SvcQueues = null;
-    private final Lock lock = new ReentrantLock();
-    private final Condition notEmpty = lock.newCondition();
 
     /**
      * Class constructor
@@ -48,7 +44,9 @@ public class CoreQueue extends Thread {
     }
 
     /**
-     * Used to subscribe a service to notifications (multiplexed by the service identification)
+     * Used to subscribe a service to notifications (multiplexed by the service
+     * identification)
+     *
      * @param svc the Service that wants to subscribe to notifications
      */
     public void subscribe(ServiceInterface svc) {
@@ -57,6 +55,7 @@ public class CoreQueue extends Thread {
 
     /**
      * Used to unsubscribe from the notifications
+     *
      * @param svc the service that wants to unsubscribe
      * @return true if the unsubscribe succeeded
      */
@@ -70,44 +69,32 @@ public class CoreQueue extends Thread {
     }
 
     /**
-     * Method called by the low-level (network) to add a message to the list. If the queue is empty, wakes-up the attendees
+     * Method called by the low-level (network) to add a message to the list. If
+     * the queue is empty, wakes-up the attendees
+     *
      * @param obj the message to put in the messageList
      * @throws InterruptedException if something breaks the lock
      */
     public void put(Message obj) throws InterruptedException {
-        lock.lock();
-        try {
-            messageList.put(obj);
-            notEmpty.signal();
-            //System.err.println("OrbQueue: in msg"+obj.content.getClass());
-        } finally {
-            lock.unlock();
-        }
+        messageList.put(obj);
+
     }
 
     /**
      * Method used by this thread to get a message to deliver
-     * @return the message from the MessageList. If the list is empty, blocks waiting for a message
-     * @throws InterruptedException  if something breaks the lock
+     *
+     * @return the message from the MessageList. If the list is empty, blocks
+     * waiting for a message
+     * @throws InterruptedException if something breaks the lock
      */
     private Message get() throws InterruptedException {
-        lock.lock();
+
         try {
-            while (messageList.isEmpty()) {
-                notEmpty.await();
-            }
-            try {
-                //System.err.println("OrbQueue get size = "+messageList.size());
-                //Message toto = messageList.take();
-                //System.err.println("OrbQueue: in msg"+toto.content.getClass());
-                return messageList.take();
-                //return toto;
-            } catch (InterruptedException ex) {
-                Logger.getLogger(CoreQueue.class.getName()).log(Level.SEVERE, null, ex);
-                return null;
-            }
-        } finally {
-            lock.unlock();
+            return messageList.take();
+
+        } catch (InterruptedException ex) {
+            Logger.getLogger(CoreQueue.class.getName()).log(Level.SEVERE, null, ex);
+            return null;
         }
     }
 
@@ -117,12 +104,13 @@ public class CoreQueue extends Thread {
         while (true) {
             try {
                 Message msg = this.get();
-                //System.err.println("sending to the right service"+msg.dest);
-                if (SvcQueues.containsKey(msg.dest)) {
-                    ((ServiceInterface) SvcQueues.get(msg.dest)).put(msg.content);
-                    //System.err.println("sending to the right service"+msg.dest);
-                }
 
+                if (SvcQueues.containsKey(msg.dest)) {
+
+                    ((ServiceInterface) SvcQueues.get(msg.dest)).put(msg.content);
+                } else {
+                    System.err.println("msg without dest service!!!");
+                }
 
             } catch (InterruptedException ex) {
                 Logger.getLogger(CoreQueue.class.getName()).log(Level.SEVERE, null, ex);

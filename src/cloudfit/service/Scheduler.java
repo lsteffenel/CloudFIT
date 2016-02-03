@@ -37,7 +37,7 @@ public class Scheduler {
             taskList.add(new TaskStatus(jobId, i));
         }
         // We do it 3 times to really "shake" the list and avoid similar list orders
-        // TODO this part shold be externalized on a "scheduler" class
+        // TODO this part shold be externalized on a "context scheduler" class
         Collections.shuffle(taskList);
         Collections.shuffle(taskList);
         Collections.shuffle(taskList);
@@ -49,13 +49,30 @@ public class Scheduler {
         System.err.println("");
     }
 
+    /**
+     * Receives a tasklist from another node (like in a job state transfer must
+     * set the data without changing the previous order
+     *
+     * @param taskList
+     */
     public void setTaskList(Object taskList) {
-        this.taskList = (CopyOnWriteArrayList<TaskStatus>) taskList;
-        System.err.println("Tasklist ready " + this.taskList.size());
-        for (int i = 0; i < this.taskList.size(); ++i) {
-            System.err.print(this.taskList.get(i).getTaskId() + "[" + this.taskList.get(i).getStatus() + "] - ");
+
+        CopyOnWriteArrayList<TaskStatus> incoming = (CopyOnWriteArrayList<TaskStatus>) taskList;
+        for (int i = 0; i < incoming.size(); i++) {
+            for (int j = 0; j < this.taskList.size(); j++) {
+                if (incoming.get(i).getTaskId() == this.taskList.get(j).getTaskId()) {
+                    if (incoming.get(i).getStatus() > this.taskList.get(j).getStatus()) {
+                        this.taskList.get(j).setStatus(incoming.get(i).getStatus());
+                        this.taskList.get(j).setTaskResult(incoming.get(i).getTaskResult());
+                        System.err.print(this.taskList.get(j).getTaskId() + "[" + this.taskList.get(j).getStatus() + "] - ");
+                        if (this.taskList.get(j).getStatus() == TaskStatus.COMPLETED) {
+                            completed++;
+                        }
+                        j = this.taskList.size(); // break
+                    }
+                }
+            }
         }
-        System.err.println("");
     }
 
     public int size() {
@@ -150,7 +167,8 @@ public class Scheduler {
     }
 
     public boolean setTaskValue(Serializable obj, boolean local) {
-        //boolean weHaveAllResults = true;
+        // TODO: recalculate the "completed" at each pass. The current global variable is a possible source of probs
+
         TaskStatus currentTask;
         TaskStatusMessage incomingTask;
         incomingTask = (TaskStatusMessage) obj;
@@ -181,13 +199,9 @@ public class Scheduler {
                     }
                 }
             }
-//            if (currentTask.getStatus() != TaskStatus.COMPLETED) {
-//                weHaveAllResults = false;
-//            }
         }
         boolean weHaveAllResults = false;
         weHaveAllResults = (completed == taskList.size());
-        
 
         return weHaveAllResults;
     }

@@ -10,7 +10,6 @@
  * 
  * *************************************************************** *
  */
-
 package cloudfit.service;
 
 import cloudfit.util.Number160;
@@ -18,6 +17,7 @@ import java.io.Serializable;
 
 /**
  * Class that storages the status of a task
+ *
  * @author Luiz Angelo STEFFENEL <Luiz-Angelo.Steffenel@univ-reims.fr>
  */
 public class TaskStatus implements Serializable {
@@ -42,6 +42,7 @@ public class TaskStatus implements Serializable {
 
     /**
      * Constructor of the class
+     *
      * @param jobId the JobId associated to this job
      * @param num this task number
      */
@@ -50,10 +51,10 @@ public class TaskStatus implements Serializable {
         this.setTaskId(num);
     }
 
-    
     /**
      * Gets the ID of the job associated to this task
-     * @return 
+     *
+     * @return
      */
     public Number160 getJobId() {
         return jobId;
@@ -61,7 +62,8 @@ public class TaskStatus implements Serializable {
 
     /**
      * Sets the ID of the job associated to this task
-     * @param jobId 
+     *
+     * @param jobId
      */
     public void setJobId(Number160 jobId) {
         this.jobId = jobId;
@@ -69,7 +71,8 @@ public class TaskStatus implements Serializable {
 
     /**
      * Gets the Task number of this task
-     * @return 
+     *
+     * @return
      */
     public int getTaskId() {
         return taskId;
@@ -77,7 +80,8 @@ public class TaskStatus implements Serializable {
 
     /**
      * Sets the task number of this task
-     * @param taskId 
+     *
+     * @param taskId
      */
     public void setTaskId(int taskId) {
         this.taskId = taskId;
@@ -85,6 +89,7 @@ public class TaskStatus implements Serializable {
 
     /**
      * get the status of this task
+     *
      * @return 0 if NEW, 1 if STARTED, 2 if COMPLETED
      */
     public int getStatus() {
@@ -93,7 +98,8 @@ public class TaskStatus implements Serializable {
 
     /**
      * Sets the status of this task (0 if NEW, 1 if STARTED, 2 if COMPLETED)
-     * @param status 
+     *
+     * @param status
      */
     public synchronized void setStatus(int status) {
         this.status = status;
@@ -101,23 +107,24 @@ public class TaskStatus implements Serializable {
 
     /**
      * Sets the result value of this task
-     * @param taskResult 
+     *
+     * @param taskResult
      */
     public synchronized void setTaskResult(Serializable taskResult) {
         this.lastUpdateTime = System.currentTimeMillis();
         this.taskResult = taskResult;
     }
-    
-        /**
+
+    /**
      * Returns the result data from this task
-     * @return 
+     *
+     * @return
      */
     public Serializable getTaskResult() {
         return taskResult;
     }
-    
-    public long getTimeSinceUpdate()
-    {
-        return System.currentTimeMillis()-this.lastUpdateTime;
+
+    public long getTimeSinceUpdate() {
+        return System.currentTimeMillis() - this.lastUpdateTime;
     }
 }

@@ -20,6 +20,9 @@ import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/** TODO remove, no more in use */
+
+
 /**
  *
  * @author Luiz Angelo STEFFENEL <Luiz-Angelo.Steffenel@univ-reims.fr>
@@ -70,7 +73,7 @@ public class WorkerThread implements Runnable {
                     // the tkResult will be split from the messag in the thrSolver to be stored in the DHT
                     TaskStatusMessage tm = new TaskStatusMessage(taskId.getJobId(), taskId.getTaskId(), taskId.getStatus(), serRes);
                     //System.err.println("Task " + tkId + " done");
-                    thrSolver.sendAll(tm);
+                    thrSolver.sendAll(tm,false);
                 }
 
             }

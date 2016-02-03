@@ -221,7 +221,7 @@ public class EasyPastryAdapter implements NetworkAdapterInterface, StorageAdapte
      * @param msg the message
      */
     @Override
-    public synchronized void sendAll(Message msg) {
+    public synchronized void sendAll(Message msg, boolean meetoo) {
 
         NodeHandle next = null;
         CastHandler cast = getCastHandler();

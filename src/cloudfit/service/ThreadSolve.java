@@ -51,6 +51,7 @@ public class ThreadSolve implements JobManagerInterface {
     private Scheduler scheduler;
     private static final Logger log = Logger.getLogger(ThreadSolve.class.getName());
     private static FileHandler fh = null;
+    private JobMessage obj = null;
 
     public ThreadSolve(ServiceInterface service, Number160 jobId, ApplicationInterface jobClass, String[] args) {
         try {
@@ -107,7 +108,7 @@ public class ThreadSolve implements JobManagerInterface {
 
     public void run() {
         //this.setName("CoreQueue");
-        Thread.currentThread().setName("ThreadSolve");
+        Thread.currentThread().setName("ThreadSolve " + jobId);
 
         //getAvailable().acquire();
         setFinished(false);
@@ -121,8 +122,6 @@ public class ThreadSolve implements JobManagerInterface {
             jobInstance.setArgs(args, this);
             CyclicWorker worker = new CyclicWorker(this, jobInstance, scheduler);
             executor.execute(worker);
-            //threads[i] = worker;
-            //worker.start();
         }
 
         try {
@@ -140,8 +139,8 @@ public class ThreadSolve implements JobManagerInterface {
     }
 
     @Override
-    public void sendAll(Serializable msg) {
-        service.sendAll(msg);
+    public void sendAll(Serializable msg, boolean metoo) {
+        service.sendAll(msg, metoo);
     }
 
     @Override
@@ -247,7 +246,10 @@ public class ThreadSolve implements JobManagerInterface {
 
     @Override
     public Serializable getJobMessage() {
-        JobMessage stateTransfer = new JobMessage(this.jobId, this.jobClass, this.jobClass.getArgs());
+
+        JobMessage stateTransfer = new JobMessage(this.jobId, obj.getJobClass(), obj.getArgs());
+        stateTransfer.setJar(obj.getJar());
+        stateTransfer.setApp(obj.getApp());
         //stateTransfer.setTaskValue(taskList);
         CopyOnWriteArrayList remoteList = new CopyOnWriteArrayList<TaskStatus>();
 
@@ -282,6 +284,17 @@ public class ThreadSolve implements JobManagerInterface {
     @Override
     public void remove(String key) {
         service.remove(key);
+    }
+
+    @Override
+    public void setOriginalMsg(JobMessage obj) {
+        this.obj = obj;
+    }
+
+    @Override
+    public JobMessage getOriginalMsg() {
+
+        return this.obj;
     }
 
 }

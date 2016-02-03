@@ -46,7 +46,7 @@ public interface JobManagerInterface extends Runnable, Serializable {
     
     public Serializable getResult();
     
-    public void sendAll(Serializable msg);
+    public void sendAll(Serializable msg, boolean metoo);
     
     //public Object getTaskList();
     
@@ -57,4 +57,8 @@ public interface JobManagerInterface extends Runnable, Serializable {
     public Serializable read(String key);
 
     public void remove(String key);
+    
+    public void setOriginalMsg(JobMessage obj);
+    
+    public JobMessage getOriginalMsg();
 }

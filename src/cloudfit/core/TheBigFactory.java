@@ -66,10 +66,10 @@ public class TheBigFactory {
     
     public static JobManagerInterface getThreadSolve(ServiceInterface service, Number160 jobId, ApplicationInterface jobClass, String[] args)
     {
-        ThreadSolve TS = new ThreadSolveDHT(service, jobId, jobClass, args);
+        //ThreadSolve TS = new ThreadSolveDHT(service, jobId, jobClass, args);
 //        Class cl = Class.forName("com.bla.TestActivity");
 //        ThreadSolve ts2 = (ThreadSolve)cl.getConstructor(ServiceInterface.class, int.class , ApplicationInterface.class , String.class).newInstance(service, jobId, jobClass, args);
-        //ThreadSolve TS = new ThreadSolve(service, jobId, jobClass, args);
+        ThreadSolve TS = new ThreadSolve(service, jobId, jobClass, args);
         
         //TS.start();
         return TS;

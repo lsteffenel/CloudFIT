@@ -10,33 +10,38 @@
  * 
  * *************************************************************** *
  */
-
 package cloudfit.network;
 
 import cloudfit.core.Message;
 
 /**
  * Generic definition of Network layer (P2P) access methods
+ *
  * @author Luiz Angelo STEFFENEL <Luiz-Angelo.Steffenel@univ-reims.fr>
  */
 public interface NetworkAdapterInterface {
+
     /**
-     * Method to send a message to the next node in the P2P overlay (ring, tree, etc)
+     * Method to send a message to the next node in the P2P overlay (ring, tree,
+     * etc)
+     *
      * @param msg the message
      */
-    public void sendNext (Message msg);
-    
+    public void sendNext(Message msg);
+
     /**
-     * Method to send a message to the previous node in the P2P overlay (ring, tree, etc)
-     * @param msg the message 
+     * Method to send a message to the previous node in the P2P overlay (ring,
+     * tree, etc)
+     *
+     * @param msg the message
      */
-    public void sendPrev (Message msg);
-    
+    public void sendPrev(Message msg);
+
     /**
      * Method to send a message to all nodes in the P2P overlay
+     *
      * @param msg the message
      */
-    public void sendAll (Message msg);
-    
-    
+    public void sendAll(Message msg, boolean metoo);
+
 }

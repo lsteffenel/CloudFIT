@@ -63,7 +63,7 @@ public class JobsContainer extends Thread implements Serializable {
         //System.err.println("getting "+jobId);
         while (it.hasNext()) {
             JobManagerInterface element = it.next();
-            if (element.getJobId().compareTo(jobId)==0) {
+            if (element.getJobId().compareTo(jobId) == 0) {
                 return element;
             }
         }
@@ -74,34 +74,25 @@ public class JobsContainer extends Thread implements Serializable {
         return jobCounter;
     }
 
-//    public void addJob(JobManagerInterface Job) {
-//        this.Jobs.add(Job);
-//        jobCounter++;
-//        //Thread toto = new Thread(Job);
-//        //            toto.start();
-//    }
-    
-    public void remove (JobMessage obj)
-    {
+    public void remove(JobMessage obj) {
         JobManagerInterface js = this.getJob(obj.getJobId());
         this.Jobs.remove(js);
     }
-    
+
     public void addJob(JobMessage obj, ServiceInterface comm) {
         System.err.println("new job " + ((JobMessage) obj).getJobId());
         Number160 jobId = obj.getJobId();
-        //System.err.println("a new job has arrived!");
 
         if (obj.getJar() == null) { // regular submission without a jar
             ApplicationInterface jobClass = obj.getJobClass();
             String[] jobargs = obj.getArgs();
-            //jobClass.initNumberOfBlocks();
 
             JobManagerInterface TS = TheBigFactory.getThreadSolve(comm, jobId, jobClass, jobargs);
             if (obj.getData() != null) {
                 //System.err.println("---->>>>> Accepting "+((CopyOnWriteArrayList<TaskStatus>)obj.getData()).size());
                 TS.setTaskList(obj.getData());
             }
+            TS.setOriginalMsg(obj);
 
             this.Jobs.add(TS);
         } else { // submission through an external jobClass (jar)
@@ -110,51 +101,43 @@ public class JobsContainer extends Thread implements Serializable {
 
                 DHTStorageUnit titi;
                 titi = (DHTStorageUnit) comm.read(jarFile);
-                FileContainer fr = (FileContainer) titi.getContent();
+                if (titi != null) {
 
-                
-                
-                String DHTdir = PropertiesUtil.getProperty("DHTDir");
+                    FileContainer fr = (FileContainer) titi.getContent();
 
-                File myDir = new File(DHTdir+"/"+jobId);
-                
-                if (!myDir.exists()) 
-                {
-                    myDir.mkdirs();
-                }
-                
-                FileOutputStream fileOuputStream;
-                try {
-                    fileOuputStream = new FileOutputStream(myDir.getAbsolutePath()+"/"+fr.getName());
+                    String DHTdir = PropertiesUtil.getProperty("DHTDir");
+
+                    File myDir = new File(DHTdir + "/" + jobId);
+
+                    if (!myDir.exists()) {
+                        myDir.mkdirs();
+                    }
+
+                    FileOutputStream fileOuputStream;
+                    File file = new File(myDir.getAbsolutePath() + "/" + fr.getName());
+                    fileOuputStream = new FileOutputStream(file);
                     fileOuputStream.write(fr.getContent());
                     fileOuputStream.close();
 
-                } catch (FileNotFoundException ex) {
-                    Logger.getLogger(this.getName()).log(Level.SEVERE, null, ex);
-                } catch (IOException ex) {
-                    Logger.getLogger(this.getName()).log(Level.SEVERE, null, ex);
+                    URL url = file.toURI().toURL();
+
+                    ClassLoader loader = URLClassLoader.newInstance(new URL[]{url}, getClass().getClassLoader());
+                    Class<?> clazz = Class.forName(obj.getApp(), true, loader);
+                    Class<? extends ApplicationInterface> runClass = clazz.asSubclass(Distributed.class);
+                    // Avoid Class.newInstance, for it is evil.
+                    Constructor<? extends ApplicationInterface> ctor = runClass.getConstructor();
+                    ApplicationInterface jobClass = ctor.newInstance();
+
+                    String[] jobargs = obj.getArgs();
+                    JobManagerInterface TS = TheBigFactory.getThreadSolve(comm, jobId, jobClass, jobargs);
+                    if (obj.getData() != null) {
+                        //System.err.println("---->>>>> Accepting "+((CopyOnWriteArrayList<TaskStatus>)obj.getData()).size());
+                        TS.setTaskList(obj.getData());
+
+                    }
+                    TS.setOriginalMsg(obj);
+                    this.Jobs.add(TS);
                 }
-
-                File file = new File(DHTdir + "/" + jobId + "/" + fr.getName());
-                URL url = file.toURI().toURL();
-                
-                //ClassLoader lolo = 
-                
-                ClassLoader loader = URLClassLoader.newInstance(new URL[]{url}, getClass().getClassLoader());
-                Class<?> clazz = Class.forName(obj.getApp(), true, loader);
-                Class<? extends ApplicationInterface> runClass = clazz.asSubclass(Distributed.class);
-                // Avoid Class.newInstance, for it is evil.
-                Constructor<? extends ApplicationInterface> ctor = runClass.getConstructor();
-                ApplicationInterface jobClass = ctor.newInstance();
-
-                String[] jobargs = obj.getArgs();
-                JobManagerInterface TS = TheBigFactory.getThreadSolve(comm, jobId, jobClass, jobargs);
-                if (obj.getData() != null) {
-                    //System.err.println("---->>>>> Accepting "+((CopyOnWriteArrayList<TaskStatus>)obj.getData()).size());
-                    TS.setTaskList(obj.getData());
-                }
-
-                this.Jobs.add(TS);
             } catch (MalformedURLException ex) {
                 Logger.getLogger(JobsContainer.class.getName()).log(Level.SEVERE, null, ex);
             } catch (ClassNotFoundException ex) {
@@ -171,6 +154,11 @@ public class JobsContainer extends Thread implements Serializable {
                 Logger.getLogger(JobsContainer.class.getName()).log(Level.SEVERE, null, ex);
             } catch (InvocationTargetException ex) {
                 Logger.getLogger(JobsContainer.class.getName()).log(Level.SEVERE, null, ex);
+
+            } catch (FileNotFoundException ex) {
+                Logger.getLogger(this.getName()).log(Level.SEVERE, null, ex);
+            } catch (IOException ex) {
+                Logger.getLogger(this.getName()).log(Level.SEVERE, null, ex);
             }
         }
 
@@ -184,14 +172,24 @@ public class JobsContainer extends Thread implements Serializable {
                 if (element.getStatus() == element.NEW) {
                     Thread toto = new Thread(element);
                     toto.start();
+                    try {
+                        while (element.getStatus() != element.COMPLETED) {
+                            Thread.sleep(1000);
+                        }
+                    } catch (InterruptedException ex) {
+                        Logger.getLogger(JobsContainer.class.getName()).log(Level.SEVERE, null, ex);
+                    }
                     break;
                 }
             }
             try {
+
                 Thread.sleep(1000);
+
             } catch (InterruptedException ex) {
                 Logger.getLogger(JobsContainer.class.getName()).log(Level.SEVERE, null, ex);
             }
+
         }
     }
 

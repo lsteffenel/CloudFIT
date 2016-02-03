@@ -48,15 +48,15 @@ public class CyclicWorker extends Thread {
 
                 // advertises other nodes that I'm working on this task
                 TaskStatusMessage tmannonce = new TaskStatusMessage(taskId.getJobId(), taskId.getTaskId(), taskId.getStatus(), null);
-                thrSolver.sendAll(tmannonce);
+                thrSolver.sendAll(tmannonce, false);
 
                 long init = System.currentTimeMillis();
                 //log.log(Level.FINE, "task i {0}:{1}", new Object[]{taskId.getJobId(),taskId.getTaskId()});
                 Serializable serRes = solve(taskId);
                 long end = System.currentTimeMillis();
-                log.log(Level.FINE, "task {0}:{1} {2} {3}", new Object[]{taskId.getJobId(),taskId.getTaskId(), Long.toString(init), Long.toString(end)});
+                log.log(Level.FINE, "task {0}:{1} {2} {3}", new Object[]{taskId.getJobId(), taskId.getTaskId(), Long.toString(init), Long.toString(end)});
 
-                    // Only prevents others that the task was finished if there is something to tell
+                // Only prevents others that the task was finished if there is something to tell
                 // on the app, it can decide to return null if there was an error, or something else
                 if (serRes != null) {
                     // a final test, as results may have been learned from the network before ending this block
@@ -70,7 +70,7 @@ public class CyclicWorker extends Thread {
                         TaskStatusMessage tm = new TaskStatusMessage(jbId, tkId, TaskStatus.COMPLETED, serRes);
                         thrSolver.setTaskValue(tm, true);
                         //System.err.println("Task " + tkId + " done");
-                        thrSolver.sendAll(tm);
+                        thrSolver.sendAll(tm, false);
 
                     }
                 } else {
@@ -80,10 +80,6 @@ public class CyclicWorker extends Thread {
                 }
             }
             taskId = ts.getWork();
-//            } catch (InterruptedException ex) {
-//                Thread.currentThread().interrupt();
-//                break; 
-//            }
         }
         System.err.println("No more tasks to do, leaving.");
     }

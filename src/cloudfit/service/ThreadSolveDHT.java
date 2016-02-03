@@ -36,12 +36,12 @@ public class ThreadSolveDHT extends ThreadSolve {
      * @param msg the taskresult message
      */
     @Override
-    public void sendAll(Serializable msg) {
+    public void sendAll(Serializable msg, boolean metoo) {
         TaskStatusMessage fullMsg = (TaskStatusMessage)msg;
         Serializable tkResult = new String("DHT");
         TaskStatusMessage notifyMsg = new TaskStatusMessage(fullMsg.getJobId(), fullMsg.getTaskId(), fullMsg.getStatus(), tkResult);
 
-        super.sendAll(notifyMsg);
+        super.sendAll(notifyMsg, metoo);
     }
     
  

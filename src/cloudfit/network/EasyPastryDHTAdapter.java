@@ -247,8 +247,7 @@ public class EasyPastryDHTAdapter implements NetworkAdapterInterface, StorageAda
      * @param msg the message
      */
     @Override
-    public void sendAll(Message msg
-    ) {
+    public void sendAll(Message msg, boolean meetoo) {
 
         NodeHandle next = null;
         CastHandler cast = getCastHandler();

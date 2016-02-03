@@ -30,13 +30,10 @@ import java.util.logging.Logger;
  */
 public class Community implements ServiceInterface {
 
-    private Number160 jobId = null;
     private long processId = 1;
     private ActiveBlockingQueue appQueue = null;
     private ORBInterface router = null;
     protected JobsContainer JobsC = null;
-    private Serialization serTool = null;
-    //private ArrayList<JobManagerInterface> Jobs = null;
 
     /**
      * Constructor of the class
@@ -52,10 +49,6 @@ public class Community implements ServiceInterface {
         this.router = na;
         this.JobsC = new JobsContainer();
         JobsC.start();
-        //this.Jobs = new ArrayList<JobManagerInterface>();
-        //requestStateOnJoin();
-        serTool = new Serialization();
-
     }
 
     /**
@@ -69,13 +62,11 @@ public class Community implements ServiceInterface {
 
         JobMessage jm;
 
-        System.err.println("new plug " + jobId);
-        jm = new JobMessage(null,jar, app, args);
-        
+        jm = new JobMessage(null, jar, app, args);
 
         return this.plug(jm);
     }
-    
+
     /**
      * Method used to submit a job
      *
@@ -86,17 +77,9 @@ public class Community implements ServiceInterface {
     public Number160 plug(ApplicationInterface app, String[] args) {
 
         //++jobId;
-
         JobMessage jm;
 
-        System.err.println("new plug " + jobId);
-        //try {
-        //jm = new JobMessage(jobId, app.getClass().newInstance(), args);
-        // ALERT : we suspect that the "app" instance created a serialization problem when transmitted
-        // by Pastry (which uses a different serialization system than Java's
         jm = new JobMessage(null, app, args);
-
-        //router.sendAll(new Message(new Long(processId), jm));
 
         return this.plug(jm);
     }
@@ -113,7 +96,8 @@ public class Community implements ServiceInterface {
         Number160 njob = new Number160(time);
         // sets a jobId as the submit interface does not knows the current one
         jm.setJobId(njob);
-        router.sendAll(new Message(processId, jm));
+        //router.sendAll(new Message(processId, jm), true);
+        this.sendAll(jm, true);
         return njob;
     }
 
@@ -129,18 +113,9 @@ public class Community implements ServiceInterface {
         boolean started = false;
         JobManagerInterface element = null;
         while (element == null) {
-//            Iterator<JobManagerInterface> it = Jobs.iterator();
-//            while (it.hasNext()) {
-//                JobManagerInterface element = it.next();
-//                if (element.getJobId() == waitingJobId) {
-//                    started = true;
-//                }
-//            }
+
             element = JobsC.getJob(waitingJobId);
-//            if (element!=null)
-//            {
-//                started = true;
-//            }
+
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException ex) {
@@ -162,11 +137,12 @@ public class Community implements ServiceInterface {
         }
         return JobManagerInterface.NOTFOUND;
     }
-    
+
     public void removeJob(Number160 jobid) {
-        JobMessage jmdelete = new JobMessage(jobid,true);
-        router.sendAll(new Message(processId, jmdelete));
-        
+        JobMessage jmdelete = new JobMessage(jobid, true);
+        this.sendAll(jmdelete, true);
+        //router.sendAll(new Message(processId, jmdelete), true);
+
     }
 
     // ServiceInterface methods
@@ -187,37 +163,42 @@ public class Community implements ServiceInterface {
      */
     @Override
     public void notify(Serializable obj) {
-        //System.err.println("a new msg has arrived!");
+        //System.err.println("a new msg has arrived!" + obj.getClass());
         if (obj.getClass() == JobMessage.class) {
             JobMessageHandler((JobMessage) obj);
-        }
-        if (obj.getClass() == TaskStatusMessage.class) {
-            TaskMessageStatusHandler((TaskStatusMessage) obj);
+        } else {
+            if (obj.getClass() == TaskStatusMessage.class) {
+                TaskMessageStatusHandler((TaskStatusMessage) obj);
 
+            } else {
+                if (obj.getClass() == StateRequestMessage.class) {
+                    StatusRequestHandler((StateRequestMessage) obj);
+                } else {
+                    System.err.println("Unexplained msg " + obj.getClass());
+                }
+            }
         }
-        if (obj.getClass() == StateRequestMessage.class) {
-            StatusRequestHandler((StateRequestMessage) obj);
-        }
-
+        //System.out.println("");
         Runtime.getRuntime().gc();
     }
 
     private void JobMessageHandler(JobMessage obj) {
         if (obj.getJobId() == null) {
+            System.err.println("JobId = null");
         } else {
             JobManagerInterface element = null;
             element = JobsC.getJob(obj.getJobId());
 
             if (element == null) {
                 // new version (it's the container that instantiate the solver)
+                System.err.println("Adding job" + obj.getJobId());
                 JobsC.addJob(obj, this);
 
-            }
-            else 
-            {
-                if (obj.isDelete())
-                {
+            } else {
+                //System.out.println("known element");
+                if (obj.isDelete()) {
                     JobsC.remove(obj);
+                    System.err.println("Removing job");
                 }
             }
         }
@@ -226,19 +207,15 @@ public class Community implements ServiceInterface {
     protected void TaskMessageStatusHandler(TaskStatusMessage obj) {
         JobManagerInterface element = null;
         element = JobsC.getJob(obj.getJobId());
-        //System.err.println("STATUS MESSAGE FROM uknown JOB " + obj.getJobId() + " do I know it ? " + element);
-        //element.setStatus(2);
 
         if (element == null) { // message from a Job I don't know -> join!!!!
-            System.err.println("STATUS MESSAGE FROM uknown JOB " + obj.getJobId() + " join!!!");
+            System.err.println("UNKNOWN JOB " + obj.getJobId() + "-->  JOIN!!!");
             StateRequestMessage srm = new StateRequestMessage(obj.getJobId());
-            
-            this.sendAll(srm);
-            //requestState(obj);
+
+            this.sendAll(srm, false);
         } else {
-//        if (element != null) {
             if (element.getStatus() == element.STARTED) { // the job is still running
-                element.setTaskValue(obj,false);
+                element.setTaskValue(obj, false);
             } // else ignore old message
         }
     }
@@ -246,45 +223,17 @@ public class Community implements ServiceInterface {
     private void StatusRequestHandler(StateRequestMessage obj) {
         Number160 jid = obj.getJobID();
         if (JobsC.getJob(jid) != null) {
-            if (JobsC.getJob(jid).getStatus() > JobManagerInterface.NEW) {
-                System.err.println("####### receiving a state transfer request");
-                    //StateReplyMessage reply = new StateReplyMessage(JobsC.getJob(obj.getJobID()).getJobMessage());
-                    sendAll(JobsC.getJob(obj.getJobID()).getJobMessage());
-                    System.err.println("####### state transfer sent");
-                
-            }
+            //if (JobsC.getJob(jid).getStatus() > JobManagerInterface.NEW) {
+            System.err.println("####### receiving a state transfer request");
+            //StateReplyMessage reply = new StateReplyMessage(JobsC.getJob(obj.getJobID()).getJobMessage());
+            JobManagerInterface delayed = JobsC.getJob(obj.getJobID());
+            JobMessage jm = (JobMessage) delayed.getJobMessage();
+
+            this.sendAll(jm, false);
+            System.err.println("####### state transfer sent");
+
         }
     }
-    
-//    private void StatusRequestHandler(StateRequestMessage obj) {
-//        int jid = obj.getJobID();
-//        if (JobsC.getJob(jid) != null) {
-//            if (JobsC.getJob(jid).getStatus() > JobManagerInterface.NEW) {
-//                System.err.println("####### receiving a state transfer request");
-//                try {
-//                    //Socket s = new Socket(obj.getSin().getAddress(), obj.getSin().getPort());
-//                    Socket s = new Socket();
-//                    System.err.println("connecting to "+obj.getSin().getAddress()+":"+obj.getSin().getPort());
-//                    s.connect(new InetSocketAddress(obj.getSin().getAddress(), obj.getSin().getPort()), 500);
-//                    OutputStream outs = s.getOutputStream();
-//                    //ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-//                    //serTool.writeObject(bOut, JobsC.getJob(obj.getJobID()).getJobMessage());
-//                    //System.err.println("The size of the object is: " + bOut.toByteArray().length);
-//
-//                    serTool.writeObject(outs, JobsC.getJob(obj.getJobID()).getJobMessage());
-//                    outs.close();
-//                    s.close();
-//                    System.err.println("####### state transfer sent");
-//                } catch (ConnectException ex3) {
-//
-//                } catch (SocketTimeoutException ex2) {
-//                    //Logger.getLogger(Community.class.getName()).log(Level.SEVERE, null, ex2);
-//                } catch (IOException ex) {
-//                    Logger.getLogger(Community.class.getName()).log(Level.SEVERE, null, ex);
-//                }
-//            }
-//        }
-//    }
 
     /**
      * Method used by the ORB thread to deliver a message to this service
@@ -316,9 +265,9 @@ public class Community implements ServiceInterface {
      * @param msg the message
      */
     @Override
-    public void sendAll(Serializable msg) {
+    public void sendAll(Serializable msg, boolean metoo) {
         //System.err.println("Sending"+msg.getClass());
-        router.sendAll(new Message(new Long(processId), msg));
+        router.sendAll(new Message(processId, msg), metoo);
     }
 
     // Storage methods
@@ -348,12 +297,6 @@ public class Community implements ServiceInterface {
      * otherwise
      */
     public boolean needData(Number160 jobId, int taskId) {
-//        for (int i = 0; i < Jobs.size(); i++) {
-//                    if (Jobs.get(i).getJobId() == jobId) {
-//                        JobManagerInterface job = Jobs.get(i);
-//                        return job.needData(jobId, taskId);
-//                    }
-//        }
         JobManagerInterface job = null;
         job = JobsC.getJob(jobId);
         if (job != null) {
@@ -380,13 +323,6 @@ public class Community implements ServiceInterface {
      * @return true if task has data, false otherwise
      */
     public boolean hasData(Number160 jobId, int taskId) {
-//        for (int i = 0; i < Jobs.size(); i++) {
-//            if (Jobs.get(i).getJobId() == jobId) {
-//                JobManagerInterface job = Jobs.get(i);
-//                return job.hasData(jobId, taskId);
-//            }
-//        }
-//        return false;
         JobManagerInterface job = null;
         job = JobsC.getJob(jobId);
         if (job != null) {
@@ -405,13 +341,6 @@ public class Community implements ServiceInterface {
      * @return the task result in the form of a Serializable object
      */
     public Serializable getData(Number160 jobId, int taskId) {
-//        for (int i = 0; i < Jobs.size(); i++) {
-//            if (Jobs.get(i).getJobId() == jobId) {
-//                JobManagerInterface job = Jobs.get(i);
-//                return job.getTaskValue(jobId, taskId);
-//            }
-//        }
-//        return null;
         JobManagerInterface job = null;
         job = JobsC.getJob(jobId);
         if (job != null) {
@@ -430,40 +359,5 @@ public class Community implements ServiceInterface {
     public JobsContainer getCurrentState() {
         return JobsC;
     }
-
-//    private synchronized void requestState(TaskStatusMessage msg) {
-//
-//        ServerSocket server = null;
-//        InetSocketAddress address = null;
-//
-//        try {
-//            server = new ServerSocket(0, 1); // uses a backlog of 1 connection only
-//            //server.setSoTimeout(3000);
-//            System.err.println("Join State transfer listening on "+ server.getInetAddress() +"on port: " + server.getLocalPort());
-//            address = new InetSocketAddress(server.getInetAddress(), server.getLocalPort());
-//
-//            StateRequestMessage srm = new StateRequestMessage(address, msg.getJobId());
-//            //System.err.println(srm.getJobID());
-//
-//            this.sendAll(srm);
-//
-//            Socket s = server.accept();
-//
-//            System.err.println("Incoming answer !!!!");
-//            InputStream ins = s.getInputStream();
-//
-//            JobMessage jobMessage = (JobMessage) serTool.readObject(ins);
-//            JobMessageHandler(jobMessage);
-//
-//            // now extract the current state from content
-//        } catch (SocketTimeoutException ex) {
-//            Logger.getLogger(Community.class.getName()).log(Level.INFO, null, ex);
-//        } catch (IOException ex) {
-//            Logger.getLogger(Community.class.getName()).log(Level.SEVERE, null, ex);
-//        } catch (ClassNotFoundException ex) {
-//            Logger.getLogger(Community.class.getName()).log(Level.SEVERE, null, ex);
-//        }
-//
-//    }
 
 }

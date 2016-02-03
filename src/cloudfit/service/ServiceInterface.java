@@ -50,7 +50,7 @@ public interface ServiceInterface {
      * Method to send a broadcast message via the protocol level
      * @param msg 
      */
-    public void sendAll (Serializable msg);
+    public void sendAll (Serializable msg, boolean metoo);
     
     /**
      * Method to write a data entry on the storage

@@ -36,7 +36,7 @@ public interface ORBInterface {
      * Method to send a message to all nodes in the P2P overlay
      * @param obj the message
      */
-    public void sendAll(Message obj);
+    public void sendAll(Message obj, boolean metoo);
 
     /**
      * Method to send a message to another Service in the same machine (inner communication)

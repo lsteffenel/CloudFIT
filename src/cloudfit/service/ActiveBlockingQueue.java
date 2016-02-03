@@ -21,10 +21,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Class associated to a service block (like @see Community), stores incoming messages and 
- * notifies the service through an Observer pattern.
- * 
- * uses locks/conditions from http://docs.oracle.com/javase/1.5.0/docs/api/java/util/concurrent/locks/Condition.html
+ * Class associated to a service block (like @see Community), stores incoming
+ * messages and notifies the service through an Observer pattern.
+ *
+ * does not uses locks anymore as the LinkedBlockingQueue provides this already
+ *
  * @author Luiz Angelo STEFFENEL <Luiz-Angelo.Steffenel@univ-reims.fr>
  */
 public class ActiveBlockingQueue extends Thread {
@@ -32,61 +33,44 @@ public class ActiveBlockingQueue extends Thread {
     private LinkedBlockingQueue messageList;
     private long processId = 0;
     private ServiceInterface CApp = null;
-    private final Lock lock = new ReentrantLock();
-    private final Condition notEmpty = lock.newCondition();
 
     /**
      * Constructor of the ActiveBlockingQueue class.
      *
-     * @param processId Id of the corresponding Service (used by CoreOrb to multiplex messages)
+     * @param processId Id of the corresponding Service (used by CoreOrb to
+     * multiplex messages)
      * @param CApp The associated service
      */
     public ActiveBlockingQueue(long processId, ServiceInterface CApp) {
-        this.setName("ActiveBlockingQueue proc "+processId);
+        this.setName("ActiveBlockingQueue proc " + processId);
         this.setPriority(Thread.NORM_PRIORITY + 1);
         messageList = new LinkedBlockingQueue();
         this.processId = processId;
         this.CApp = CApp;
-        //this.start();
     }
 
     /**
      * Adds a message to the messageList queue
-     * 
+     *
      * @param obj the message
      */
     public void put(Serializable obj) throws InterruptedException {
-        lock.lock();
-        try {
-            messageList.put(obj);
-            notEmpty.signalAll();
-            //System.err.println("putting ("+ messageList.size() +") "+obj.getClass());
-        } finally {
-            lock.unlock();
-        }
-        //System.err.println("putting"+obj.getClass());
+        messageList.put(obj);
+
     }
 
     /**
-     * Returns one message in the MessageList queue. If the queue is empty, blocks waiting for a message
-     * 
+     * Returns one message in the MessageList queue. If the queue is empty,
+     * blocks waiting for a message
+     *
      * @return message from the list
      */
     public Serializable get() throws InterruptedException {
-        lock.lock();
         try {
-            while (messageList.isEmpty()) {
-                notEmpty.await();
-                //System.err.println("awakening");
-            }
-            try {
-                return (Serializable) messageList.take();
-            } catch (InterruptedException ex) {
-                Logger.getLogger(ActiveBlockingQueue.class.getName()).log(Level.SEVERE, null, ex);
-                return null;
-            }
-        } finally {
-            lock.unlock();
+            return (Serializable) messageList.take();
+        } catch (InterruptedException ex) {
+            Logger.getLogger(ActiveBlockingQueue.class.getName()).log(Level.SEVERE, null, ex);
+            return null;
         }
     }
 
@@ -95,12 +79,10 @@ public class ActiveBlockingQueue extends Thread {
      *
      * @return the size of the messageList
      */
-    
     public int size() {
         return messageList.size();
     }
 
-    
     public void run() {
         // TODO: use while (running) and a "disable" method    
         while (true) {

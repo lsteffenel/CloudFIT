@@ -10,7 +10,6 @@
  * 
  * *************************************************************** *
  */
-
 package cloudfit.service;
 
 import cloudfit.application.ApplicationInterface;
@@ -19,6 +18,7 @@ import java.io.Serializable;
 
 /**
  * Message to insert a new job
+ *
  * @author Luiz Angelo STEFFENEL <Luiz-Angelo.Steffenel@univ-reims.fr>
  */
 public class JobMessage implements Serializable {
@@ -49,6 +49,7 @@ public class JobMessage implements Serializable {
 
     /**
      * Constructor of this class.
+     *
      * @param jobId the ID of the job
      * @param obj the class of the application to run
      * @param args the application arguments
@@ -58,37 +59,36 @@ public class JobMessage implements Serializable {
         this.args = args;
         this.jobClass = obj;
     }
-    
-    public JobMessage(Number160 jobId,String jar, String app, String[] args)
-    {
-        this.njobId=jobId;
-        this.jar=jar;
+
+    public JobMessage(Number160 jobId, String jar, String app, String[] args) {
+        this.njobId = jobId;
+        this.jar = jar;
         this.app = app;
         this.args = args;
     }
-    
-    public JobMessage(Number160 jobId, boolean delete)
-    {
-        this.njobId=jobId;
+
+    public JobMessage(Number160 jobId, boolean delete) {
+        this.njobId = jobId;
         this.delete = delete;
     }
 
-    boolean isDelete()
-    {
+    boolean isDelete() {
         return this.delete;
     }
-    
+
     /**
      * Gets the Job ID
+     *
      * @return the jobId
      */
     public Number160 getJobId() {
         return njobId;
     }
-    
+
     /**
      * Sets the Job ID
-     * @param id 
+     *
+     * @param id
      */
     public void setJobId(Number160 id) {
         this.njobId = id;
@@ -96,7 +96,8 @@ public class JobMessage implements Serializable {
 
     /**
      * Gets the Job arguments
-     * @return 
+     *
+     * @return
      */
     public String[] getArgs() {
         return args;
@@ -104,12 +105,17 @@ public class JobMessage implements Serializable {
 
     /**
      * Gets the Job class to run
-     * @return 
+     *
+     * @return
      */
     public ApplicationInterface getJobClass() {
-        return jobClass;
+        return this.jobClass;
     }
-    
+
+    public void setJobClass(ApplicationInterface obj) {
+        this.jobClass = obj;
+    }
+
     public Serializable getData() {
         return data;
     }
@@ -117,5 +123,5 @@ public class JobMessage implements Serializable {
     public void setData(Serializable data) {
         this.data = data;
     }
-    
+
 }
