@@ -8,7 +8,6 @@ package cloudfit.network;
 import cloudfit.core.CoreQueue;
 import cloudfit.core.Message;
 import cloudfit.service.Community;
-import cloudfit.service.TaskStatusMessage;
 import cloudfit.storage.StorageAdapterInterface;
 import cloudfit.util.PropertiesUtil;
 import java.io.EOFException;

@@ -113,11 +113,12 @@ public class JobsContainer extends Thread implements Serializable {
                         myDir.mkdirs();
                     }
 
-                    FileOutputStream fileOuputStream;
+                    FileOutputStream fis;
                     File file = new File(myDir.getAbsolutePath() + "/" + fr.getName());
-                    fileOuputStream = new FileOutputStream(file);
-                    fileOuputStream.write(fr.getContent());
-                    fileOuputStream.close();
+                    fis = new FileOutputStream(file);
+                    fis.write(fr.getContent());
+                    fis.flush();
+                    fis.close();
 
                     URL url = file.toURI().toURL();
 
