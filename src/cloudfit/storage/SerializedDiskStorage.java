@@ -41,10 +41,10 @@ public class SerializedDiskStorage implements StorageAdapterInterface {
      * @param value 
      */
     @Override
-    public void save(String key, Serializable value, boolean mutable) {
+    public void save(Serializable value, String...keys) {
         try {
             //use buffering
-            OutputStream file = new FileOutputStream(key);
+            OutputStream file = new FileOutputStream(keys[0]);
             OutputStream buffer = new BufferedOutputStream(file);
             ObjectOutput output = new ObjectOutputStream(buffer);
             try {
@@ -65,8 +65,8 @@ public class SerializedDiskStorage implements StorageAdapterInterface {
      * @param value 
      */
     @Override
-    public void blocking_save(String key, Serializable value, boolean mutable) {
-        this.save(key,value, mutable);
+    public void blocking_save(Serializable value, String...keys) {
+        this.save(value,keys);
     }
 
     /**
@@ -75,11 +75,11 @@ public class SerializedDiskStorage implements StorageAdapterInterface {
      * @return 
      */
     @Override
-    public Serializable read(String key) {
+    public Serializable read(String key[]) {
         Serializable element = null;
         try {
             //use buffering
-            InputStream file = new FileInputStream(key);
+            InputStream file = new FileInputStream(key[0]);
             InputStream buffer = new BufferedInputStream(file);
             ObjectInput input = new ObjectInputStream(buffer);
             try {
@@ -102,8 +102,8 @@ public class SerializedDiskStorage implements StorageAdapterInterface {
      * @param key 
      */
     @Override
-    public void remove(String key) {
-        File file = new File(key);
+    public void remove(String...key) {
+        File file = new File(key[0]);
         if (file.delete()) {
             System.err.println(file.getName() + " is deleted!");
         } else {

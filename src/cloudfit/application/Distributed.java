@@ -102,21 +102,21 @@ public abstract class Distributed implements ApplicationInterface, Serializable 
     }
 
     @Override
-    public void save(String key, Serializable obj, boolean mutable, int tasknumber) {
+    public void save(int tasknumber, Serializable obj, String...keys) {
             DHTStorageUnit dsu = new DHTStorageUnit(threadSolve.getJobId(), tasknumber, obj);
-            threadSolve.save(key, dsu, mutable);
+            threadSolve.save(dsu, keys);
     }
 
     /**
      * Reads a serialized object using the StorageAdapter.
      */
     @Override
-    public Serializable read(String key) {
+    public Serializable read(String...key) {
         return threadSolve.read(key);
     }
 
     @Override
-    public void remove(String key) {
+    public void remove(String...key) {
         threadSolve.remove(key);
     }
     

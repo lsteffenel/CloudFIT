@@ -40,9 +40,9 @@ public class CyclicWorker extends Thread {
     public void run() {
 
         TaskStatus taskId = ts.getWork();
-        while (taskId != null && thrSolver.getStatus() != 2) { // getWork returns null when there is no more tasks to execute or if the Job is finished
+        while (taskId != null && thrSolver.getStatus()!=JobManagerInterface.COMPLETED) { // getWork returns null when there is no more tasks to execute or if the Job is finished
 //            try {
-            if (taskId.getStatus() != TaskStatus.COMPLETED && taskId.getStatus() != TaskStatus.DISTANT) {
+            if (taskId.getStatus() != TaskStatus.COMPLETED) {
 
                 taskId.setStatus(TaskStatus.STARTED);
 
@@ -52,17 +52,18 @@ public class CyclicWorker extends Thread {
 
                 long init = System.currentTimeMillis();
                 //log.log(Level.FINE, "task i {0}:{1}", new Object[]{taskId.getJobId(),taskId.getTaskId()});
+                //System.out.println("Starting "+taskId.getTaskId());
                 Serializable serRes = solve(taskId);
+                //System.out.println("Ending "+taskId.getTaskId());
                 long end = System.currentTimeMillis();
-                log.log(Level.FINE, "task {0}:{1} {2} {3}", new Object[]{taskId.getJobId(), taskId.getTaskId(), Long.toString(init), Long.toString(end)});
+                log.log(Level.FINE, "task {0}:{1} {2} {3} ({4})", new Object[]{taskId.getJobId(), taskId.getTaskId(), Long.toString(init), Long.toString(end), new Long(end-init)});
 
                 // Only prevents others that the task was finished if there is something to tell
                 // on the app, it can decide to return null if there was an error, or something else
                 if (serRes != null) {
                     // a final test, as results may have been learned from the network before ending this block
                     if (taskId.getStatus() != TaskStatus.COMPLETED) {
-                        //taskId.setStatus(TaskStatus.COMPLETED);
-
+                        
                         Number160 jbId = taskId.getJobId();
                         int tkId = taskId.getTaskId();
 
@@ -71,17 +72,21 @@ public class CyclicWorker extends Thread {
                         thrSolver.setTaskValue(tm, true);
                         //System.err.println("Task " + tkId + " done");
                         thrSolver.sendAll(tm, false);
+                        taskId.setStatus(TaskStatus.COMPLETED);
+
 
                     }
-                } else {
-                    if (taskId.getStatus() == TaskStatus.STARTED) {
-                        taskId.setStatus(TaskStatus.STARTED_DISTANT);
-                    }
-                }
+                } 
+//                else {  // someone announced it is working on this task
+//                    if (taskId.getStatus() == TaskStatus.STARTED) {
+//                        taskId.setStatus(TaskStatus.STARTED_DISTANT);
+//                    }
+//                }
             }
             taskId = ts.getWork();
+            
         }
-        System.err.println("No more tasks to do, leaving.");
+        //System.err.println("No more tasks to do, leaving.");
     }
 
     public Serializable solve(TaskStatus taskId) {

@@ -102,6 +102,7 @@ public class TaskStatus implements Serializable {
      * @param status
      */
     public synchronized void setStatus(int status) {
+        this.lastUpdateTime = System.currentTimeMillis();
         this.status = status;
     }
 
@@ -125,6 +126,6 @@ public class TaskStatus implements Serializable {
     }
 
     public long getTimeSinceUpdate() {
-        return System.currentTimeMillis() - this.lastUpdateTime;
+        return (System.currentTimeMillis() - this.lastUpdateTime);
     }
 }

@@ -19,8 +19,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class Scheduler {
 
     private CopyOnWriteArrayList<TaskStatus> taskList = null;
-    private int completed = 0;
+    //private int completed = 0;
     private int backoff = 10000;
+    private boolean weHaveAllResults = false;
 
     public Scheduler(Number160 jobId, int nbTasks) {
         startTaskList(jobId, nbTasks);
@@ -58,25 +59,41 @@ public class Scheduler {
     public void setTaskList(Object taskList) {
 
         CopyOnWriteArrayList<TaskStatus> incoming = (CopyOnWriteArrayList<TaskStatus>) taskList;
-        for (int i = 0; i < incoming.size(); i++) {
-            for (int j = 0; j < this.taskList.size(); j++) {
+        int done = 0;
+        for (int j = 0; j < this.taskList.size(); j++) {
+            for (int i = 0; i < incoming.size(); i++) {
                 if (incoming.get(i).getTaskId() == this.taskList.get(j).getTaskId()) {
                     if (incoming.get(i).getStatus() > this.taskList.get(j).getStatus()) {
-                        this.taskList.get(j).setStatus(incoming.get(i).getStatus());
-                        this.taskList.get(j).setTaskResult(incoming.get(i).getTaskResult());
-                        System.err.print(this.taskList.get(j).getTaskId() + "[" + this.taskList.get(j).getStatus() + "] - ");
-                        if (this.taskList.get(j).getStatus() == TaskStatus.COMPLETED) {
-                            completed++;
+                        if (incoming.get(i).getStatus() == TaskStatus.STARTED) {
+                            this.taskList.get(j).setStatus(TaskStatus.STARTED_DISTANT);
+                        } else {
+                            this.taskList.get(j).setStatus(incoming.get(i).getStatus());
                         }
-                        j = this.taskList.size(); // break
+                        if (incoming.get(i).getStatus() == TaskStatus.COMPLETED) {
+                            this.taskList.get(j).setTaskResult(incoming.get(i).getTaskResult());
+                            done++;
+                        }
+//                          if (this.taskList.get(j).getStatus() == TaskStatus.COMPLETED) {
+//                            completed++;
+//                        }
+                        //j = this.taskList.size(); // break
                     }
+                    System.err.print(this.taskList.get(j).getTaskId() + "[" + this.taskList.get(j).getStatus() + "] - ");
+//                      
                 }
             }
         }
+        weHaveAllResults = (done == this.taskList.size());
+            
     }
 
     public int size() {
         return taskList.size();
+    }
+    
+    public boolean haveAllResults()
+    {
+        return weHaveAllResults;
     }
 
     /**
@@ -93,30 +110,63 @@ public class Scheduler {
             }
         }
         // ok, no free tasks anymore. Look for a distant task (speculative execution)
-        // or one of the locally started is stuck. But before, let me give it a chance (backoff)
+        // but before, let me give it a chance (backoff)
 
-        it = taskList.iterator();
+        //it = taskList.iterator();
         boolean remaining = false;
         do {
             if (remaining == true) {
                 try {
                     Thread.sleep(backoff);
-                    System.err.println("sleep backoff");
+                    //System.err.println("sleep backoff ");
                 } catch (InterruptedException ex) {
                     //Logger.getLogger(Scheduler.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
+            it = taskList.iterator();
+        
             while (it.hasNext()) {
                 TaskStatus ts = (TaskStatus) it.next();
                 if (ts.getStatus() == TaskStatus.STARTED_DISTANT) {
+                    //System.out.println("distant remaining " + ts.getTimeSinceUpdate());
                     if (ts.getTimeSinceUpdate() > backoff) {
+                        ts.setStatus(TaskStatus.NEW);
                         return ts;
                     } else {
                         remaining = true;
                     }
                 }
             }
-        } while (remaining == true);
+        } while (remaining == true && !weHaveAllResults);
+        
+        // ok, no free tasks anymore. Looking for a locally started (stuck ?). But before, let me give it a chance (backoff)
+
+        remaining = false;
+        do {
+            if (remaining == true) {
+                try {
+                    Thread.sleep(backoff);
+                    //System.err.println("sleep backoff ");
+                } catch (InterruptedException ex) {
+                    //Logger.getLogger(Scheduler.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+            it = taskList.iterator();
+        
+            while (it.hasNext()) {
+                TaskStatus ts = (TaskStatus) it.next();
+                if (ts.getStatus() == TaskStatus.STARTED) {
+                    //System.out.println("local speculative " + ts.getTimeSinceUpdate());
+                    if (ts.getTimeSinceUpdate() > backoff) {
+                        ts.setStatus(TaskStatus.NEW);
+                        return ts;
+                    } else {
+                        remaining = true;
+                    }
+                }
+            }
+        } while (remaining == true && !weHaveAllResults);
+        
         // nothing else to run, distant or local. Return null to stop workers
 
         return null;
@@ -175,9 +225,9 @@ public class Scheduler {
         int done = 0;
         //if (!Finished) {
         for (int i = 0; i < taskList.size(); ++i) {
-            
+
             currentTask = taskList.get(i);
-            if (currentTask.getTaskId() == ((TaskStatusMessage) obj).getTaskId()) {
+            if (currentTask.getTaskId() == incomingTask.getTaskId()) {
                 if (incomingTask.getStatus() == TaskStatus.STARTED) {
                     if (currentTask.getStatus() == TaskStatus.NEW) {
                         if (local) {
@@ -187,30 +237,28 @@ public class Scheduler {
                             System.err.println("Someone is working on this task (" + currentTask.getTaskId() + "), marking it as \"running somewhere else\"");
                         }
                     }
-                }
+                } else {
+                    if (incomingTask.getStatus() == TaskStatus.COMPLETED) {
 
-                if (incomingTask.getStatus() == TaskStatus.COMPLETED) {
-
-                    if (currentTask.getStatus() != TaskStatus.COMPLETED) {
-                        currentTask.setStatus(TaskStatus.COMPLETED);
-                        // 13/01 - only status, not data
-                        currentTask.setTaskResult(((TaskStatusMessage) obj).getTaskValue());
-                        //System.err.println("New result from others (S): " + currentTask.getTaskId() + "[" + currentTask.getStatus() + "]");
-                        completed++;
-                        System.err.println(currentTask.getTaskId() + "---> " + completed + "/" + taskList.size());
+                        if (currentTask.getStatus() != TaskStatus.COMPLETED) {
+                            currentTask.setStatus(TaskStatus.COMPLETED);
+                            // 13/01 - only status, not data
+                            currentTask.setTaskResult(incomingTask.getTaskValue());
+                            //System.err.println("New result from others (S): " + currentTask.getTaskId() + "[" + currentTask.getStatus() + "]");
+                            //completed++;
+                            //System.err.println(incomingTask.getTaskId() + "---> " + done + "/" + taskList.size());
+                        }
                     }
                 }
             }
-            if (currentTask.getStatus()==TaskStatus.COMPLETED)
-            {
+            if (currentTask.getStatus() == TaskStatus.COMPLETED) {
                 done++;
             }
         }
-        boolean weHaveAllResults = false;
+        System.err.println("---> " + done + "/" + taskList.size());
         weHaveAllResults = (done == taskList.size());
 
         //weHaveAllResults = (completed == taskList.size());
-
         return weHaveAllResults;
     }
 

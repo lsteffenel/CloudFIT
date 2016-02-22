@@ -97,15 +97,15 @@ public interface ApplicationInterface extends Serializable,Cloneable {
     /**
      * Stores a serialized object using the StorageAdapter. 
      */
-    public void save(String key,Serializable obj, boolean mutable, int tasknumber);
+    public void save(int tasknumber, Serializable obj, String...keys);
     
     
     /**
      * Reads a serialized object using the StorageAdapter. 
      */
-    public Serializable read(String key);
+    public Serializable read(String...key);
     
-    public void remove(String key);
+    public void remove(String...key);
     
     
 }

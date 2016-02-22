@@ -24,7 +24,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
@@ -54,11 +53,11 @@ public class ThreadSolve implements JobManagerInterface {
     private JobMessage obj = null;
 
     public ThreadSolve(ServiceInterface service, Number160 jobId, ApplicationInterface jobClass, String[] args) {
-        try {
-            getAvailable().acquire();
-        } catch (InterruptedException ex) {
-            Logger.getLogger(ThreadSolve.class.getName()).log(Level.SEVERE, null, ex);
-        }
+//        try {
+//            getAvailable().acquire();
+//        } catch (InterruptedException ex) {
+//            Logger.getLogger(ThreadSolve.class.getName()).log(Level.SEVERE, null, ex);
+//        }
         try {
             fh = new FileHandler("TestLogging.log", true);
             //fh.setFormatter(new SimpleFormatter());
@@ -111,7 +110,7 @@ public class ThreadSolve implements JobManagerInterface {
         //this.setName("CoreQueue");
         Thread.currentThread().setName("ThreadSolve " + jobId);
 
-        //getAvailable().acquire();
+        ////getAvailable().acquire();
         setFinished(false);
         setStatus(STARTED);
         //status = 1;
@@ -126,16 +125,20 @@ public class ThreadSolve implements JobManagerInterface {
         }
 
         try {
-            while (!executor.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS)){};
+            //while (!executor.awaitTermination(1000, TimeUnit.MILLISECONDS) && !this.isFinished()){
+            while (!this.isFinished()) {
+                Thread.sleep(1000);
+                //System.out.println("sleeping");
+            }
         } catch (InterruptedException ex) {
             Logger.getLogger(ThreadSolve.class.getName()).log(Level.SEVERE, null, ex);
         }
 
-        System.err.println("");
-        this.setFinished(true);
+        //System.err.println("FINISHED");
+        //this.setFinished(true);
         //setStatus(COMPLETED);
         //status = 2;
-        getAvailable().release();
+        //getAvailable().release();
 
     }
 
@@ -148,15 +151,17 @@ public class ThreadSolve implements JobManagerInterface {
     public void setTaskValue(Serializable obj, boolean local) {
 
         if (!Finished) {
-            boolean weHaveAllResults = scheduler.setTaskValue(obj, local);
+            scheduler.setTaskValue(obj, local);
 
-            if (weHaveAllResults) {
-                System.err.println("We have all results, no need to wait the Workers");
+            if (scheduler.haveAllResults()) {
+                //System.err.println("We have all results, no need to wait the Workers");
                 //executor.shutdownNow();
                 setStatus(COMPLETED);
+                setFinished(true);
+        
                 //executor.shutdown();
                 executor.shutdownNow();
-                getAvailable().release();
+                //getAvailable().release();
             }
         }
     }
@@ -193,6 +198,7 @@ public class ThreadSolve implements JobManagerInterface {
     }
 
     public boolean isFinished() {
+        scheduler.haveAllResults();
         return Finished;
     }
 
@@ -228,10 +234,13 @@ public class ThreadSolve implements JobManagerInterface {
     @Override
     public boolean waitFinished() throws InterruptedException {
         //System.err.println("Semaphore = " + getAvailable().availablePermits());
-        getAvailable().acquire();
+        //getAvailable().acquire();
+        while (!this.isFinished())
+        {
+            Thread.sleep(500);
+        }
         finalizeResult();
-        Finished = true;
-
+        
         return Finished;
     }
 
@@ -273,17 +282,17 @@ public class ThreadSolve implements JobManagerInterface {
 
     // Storage methods
     @Override
-    public void save(String key, Serializable value, boolean mutable) {
-        service.save(key, value, mutable);
+    public void save(Serializable value, String...keys) {
+        service.save(value, keys);
     }
 
     @Override
-    public Serializable read(String key) {
+    public Serializable read(String...key) {
         return service.read(key);
     }
 
     @Override
-    public void remove(String key) {
+    public void remove(String...key) {
         service.remove(key);
     }
 

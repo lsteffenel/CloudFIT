@@ -52,11 +52,11 @@ public interface JobManagerInterface extends Runnable, Serializable {
     
     public void setTaskList(Object taskList);
     
-    public void save(String key, Serializable value, boolean mutable);
+    public void save(Serializable value, String...keys);
 
-    public Serializable read(String key);
+    public Serializable read(String...key);
 
-    public void remove(String key);
+    public void remove(String...key);
     
     public void setOriginalMsg(JobMessage obj);
     

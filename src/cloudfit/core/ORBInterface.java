@@ -49,26 +49,26 @@ public interface ORBInterface {
      * @param key
      * @param value
      */
-    public void save(String key, Serializable value, boolean mutable);
+    public void save(Serializable value, String...keys);
     
     /**
      * Method to write a data entry on the storage, waiting to return
      * @param key
      * @param value
      */
-    public void blocking_save(String key, Serializable value, boolean mutable);
+    public void blocking_save(Serializable value, String...keys);
     
     /**
      * Method to read a data from the storage
      * @param key
      * @return the data corresponding to the key
      */
-    public Serializable read(String key) ;
+    public Serializable read(String...keys) ;
     
     /**
      * Removes the value under the key identification from the storage
      *
      * @param key the key that identifies the data to be stored
      */
-    public void remove(String key);
+    public void remove(String...keys);
 }

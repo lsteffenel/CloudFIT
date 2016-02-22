@@ -34,9 +34,11 @@ import net.tomp2p.connection.Bindings;
 import net.tomp2p.connection.DSASignatureFactory;
 import net.tomp2p.dht.FutureGet;
 import net.tomp2p.dht.FuturePut;
+import net.tomp2p.dht.GetBuilder;
 import net.tomp2p.dht.PeerBuilderDHT;
 import net.tomp2p.dht.PeerDHT;
 import net.tomp2p.dht.PutBuilder;
+import net.tomp2p.dht.RemoveBuilder;
 import net.tomp2p.futures.FutureBootstrap;
 import net.tomp2p.futures.FutureDirect;
 import net.tomp2p.futures.FutureDiscover;
@@ -238,40 +240,38 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
 
             }
             // delivery method
-            
+
             peer.peer().objectDataReply(new ObjectDataReply() {
                 @Override
                 public Object reply(final PeerAddress sender, final Object request) throws Exception {
-                    
-                        
+
                     TomP2PMessage P2Pmsg = (TomP2PMessage) request;
-                    
+
                     /*
-                    if (P2Pmsg.getType() == TomP2PMessage.BCAST) {
-                        if (history.containsKey(P2Pmsg.getSenderId())) {
-                            TreeSet ts = history.get(P2Pmsg.getSenderId());
-                            if (ts.contains(P2Pmsg.getSequenceNumber())) {
-                                // do nothing, already know
-                                //System.err.println("do nothing, already have it" + P2Pmsg.getSenderId() + " (" + P2Pmsg.getSequenceNumber() + ")");
-                            } else {
-                                //System.err.println("unknown seq");
-                                ts.add(P2Pmsg.getSequenceNumber());
+                     if (P2Pmsg.getType() == TomP2PMessage.BCAST) {
+                     if (history.containsKey(P2Pmsg.getSenderId())) {
+                     TreeSet ts = history.get(P2Pmsg.getSenderId());
+                     if (ts.contains(P2Pmsg.getSequenceNumber())) {
+                     // do nothing, already know
+                     //System.err.println("do nothing, already have it" + P2Pmsg.getSenderId() + " (" + P2Pmsg.getSequenceNumber() + ")");
+                     } else {
+                     //System.err.println("unknown seq");
+                     ts.add(P2Pmsg.getSequenceNumber());
 
-                                bbcast(P2Pmsg);
-                            }
-                        } else {
-                            //System.err.println("unknown unknown sender");
-                            TreeSet ts = new TreeSet();
-                            ts.add(P2Pmsg.getSequenceNumber());
-                            history.put(P2Pmsg.getSenderId(), ts);
-                            bbcast(P2Pmsg);
+                     bbcast(P2Pmsg);
+                     }
+                     } else {
+                     //System.err.println("unknown unknown sender");
+                     TreeSet ts = new TreeSet();
+                     ts.add(P2Pmsg.getSequenceNumber());
+                     history.put(P2Pmsg.getSenderId(), ts);
+                     bbcast(P2Pmsg);
 
-                        }
-                    }*/
+                     }
+                     }*/
                     //System.err.println("msg arrived --> "+((Message)P2Pmsg.getContent()).content.getClass());
-            
                     contentDelivery((Message) P2Pmsg.getContent());
-                    
+
                     return "ack";
                 }
 
@@ -291,7 +291,6 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
 //
 //                    }
 //                }
-
             });
 
 //    
@@ -445,36 +444,35 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
 //    }
     public void contentDelivery(Message element) {
         try {
-            
+
             MsgQueue.put(element);
-            
+
             /*
-            //System.err.println("Delivery : "+element.content.getClass());
-            //Message element = ((EasyPastryContent) content).getContent();
+             //System.err.println("Delivery : "+element.content.getClass());
+             //Message element = ((EasyPastryContent) content).getContent();
 
-            // only TaskStatusMessages are intercepted here
-            if (element.content.getClass() == TaskStatusMessage.class) {
+             // only TaskStatusMessages are intercepted here
+             if (element.content.getClass() == TaskStatusMessage.class) {
 
-                if (community.hasJob(((TaskStatusMessage) element.content).getJobId())) {
-                    MsgQueue.put(element);
+             if (community.hasJob(((TaskStatusMessage) element.content).getJobId())) {
+             MsgQueue.put(element);
                     
-//                    if (community.needData(((TaskStatusMessage) element.content).getJobId(), ((TaskStatusMessage) element.content).getTaskId())) {
-//                        //System.err.println("Sending it up!!!");
-//                        MsgQueue.put(element);
-//                    } else {
-//                        //probably my own taskstatusmessage sent to all
-//                        //System.out.println("ignoring it");
-//                    }
-                } else { // unknown job, let the "Join" part work
-                    MsgQueue.put(element);
-                    //       System.out.println("a job to go?");
-                }
-            } else {
-                //System.err.println("Another msg incoming " + element.content.getClass());
-                MsgQueue.put(element);
+             //                    if (community.needData(((TaskStatusMessage) element.content).getJobId(), ((TaskStatusMessage) element.content).getTaskId())) {
+             //                        //System.err.println("Sending it up!!!");
+             //                        MsgQueue.put(element);
+             //                    } else {
+             //                        //probably my own taskstatusmessage sent to all
+             //                        //System.out.println("ignoring it");
+             //                    }
+             } else { // unknown job, let the "Join" part work
+             MsgQueue.put(element);
+             //       System.out.println("a job to go?");
+             }
+             } else {
+             //System.err.println("Another msg incoming " + element.content.getClass());
+             MsgQueue.put(element);
 
-            }*/
-
+             }*/
         } catch (InterruptedException ex) {
             Logger.getLogger(EasyPastryDHTAdapter.class
                     .getName()).log(Level.SEVERE, null, ex);
@@ -551,9 +549,20 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
     }
 
     @Override
-    public void save(String key, Serializable value, boolean mutable) {
+    public void save(Serializable value, String... keys) {
         try {
-            peer.put(Number160.createHash(key)).data(new Data(value)).start();
+            switch (keys.length) {
+                case 1:
+                    peer.put(Number160.createHash(keys[0])).domainKey(Number160.ZERO).versionKey(Number160.ZERO).data(new Data(value)).start();
+                    break;
+                case 2:
+                    peer.put(Number160.createHash(keys[0])).domainKey(Number160.createHash(keys[1])).versionKey(Number160.ZERO).data(new Data(value)).start();
+                    break;
+                default:
+                    peer.put(Number160.createHash(keys[0])).domainKey(Number160.createHash(keys[1])).versionKey(Number160.createHash(keys[2])).data(new Data(value)).start();
+                    break;
+            }
+            //peer.put(Number160.createHash(key)).data(new Data(value)).start();
             //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
 
         } catch (IOException ex) {
@@ -563,18 +572,32 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
     }
 
     @Override
-    public void blocking_save(String key, Serializable value, boolean mutable) {
+    public void blocking_save(Serializable value, String... keys) {
         try {
+
             Data dt = new Data(value);
-            PutBuilder pb = peer.put(Number160.createHash(key)).data(dt);
+            PutBuilder pb;
+            switch (keys.length) {
+                case 1:
+                    pb = peer.put(Number160.createHash(keys[0])).domainKey(Number160.ZERO).versionKey(Number160.ZERO).data(dt);
+                    break;
+                case 2:
+                    pb = peer.put(Number160.createHash(keys[0])).domainKey(Number160.createHash(keys[1])).versionKey(Number160.ZERO).data(dt);
+                    break;
+                default:
+                    pb = peer.put(Number160.createHash(keys[0])).domainKey(Number160.createHash(keys[1])).versionKey(Number160.createHash(keys[2])).data(dt);
+                    break;
+            }
             if (spf != null) {
                 pb.addPostRoutingFilter(spf);
             }
 
             //PutBuilder pb = peer.put(Number160.createHash(key)).data(dt);
-            pb.idleTCPMillis(60000);
-            pb.idleUDPMillis(60000);
-            pb.slowResponseTimeoutSeconds(60000);
+            /*  commented to test delays
+             pb.idleTCPMillis(60000);
+             pb.idleUDPMillis(60000);
+             pb.slowResponseTimeoutSeconds(60000);
+             */
             //pb.forceTCP();
             FuturePut futurePut = pb.start();
             //futurePut.awaitUninterruptibly(4000);
@@ -592,10 +615,22 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
     }
 
     @Override
-    public Serializable read(String key) {
+    public Serializable read(String... keys) {
 
         //FutureGet futureDHT = peer.get(Number160.ZERO).contentKey(Number160.createHash(key)).start();
-        FutureGet futureDHT = peer.get(Number160.createHash(key)).start();
+        GetBuilder gt;
+        switch (keys.length) {
+                case 1:
+                    gt = peer.get(Number160.createHash(keys[0])).domainKey(Number160.ZERO).versionKey(Number160.ZERO);
+                    break;
+                case 2:
+                    gt = peer.get(Number160.createHash(keys[0])).domainKey(Number160.createHash(keys[1])).versionKey(Number160.ZERO);
+                    break;
+                default:
+                    gt = peer.get(Number160.createHash(keys[0])).domainKey(Number160.createHash(keys[1])).versionKey(Number160.createHash(keys[2]));
+                    break;
+            }
+        FutureGet futureDHT = gt.start();
         futureDHT.awaitUninterruptibly();
         if (futureDHT.isSuccess()) {
 
@@ -626,8 +661,20 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
     }
 
     @Override
-    public void remove(String key) {
-        peer.remove(Number160.createHash(key)).start().awaitUninterruptibly();
+    public void remove(String... keys) {
+        RemoveBuilder rb ;
+        switch (keys.length) {
+                case 1:
+                    rb = peer.remove(Number160.createHash(keys[0])).domainKey(Number160.ZERO).versionKey(Number160.ZERO);
+                    break;
+                case 2:
+                    rb = peer.remove(Number160.createHash(keys[0])).domainKey(Number160.createHash(keys[1])).versionKey(Number160.ZERO);
+                    break;
+                default:
+                    rb = peer.remove(Number160.createHash(keys[0])).domainKey(Number160.createHash(keys[1])).versionKey(Number160.createHash(keys[2]));
+                    break;
+            }
+        rb.start().awaitUninterruptibly();
 
         //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }

@@ -156,7 +156,7 @@ public class DHT {
             FileContainer fc = new FileContainer(file);
             DHTStorageUnit dsu = new DHTStorageUnit(null, -1, (Serializable)fc);
             
-            ((StorageAdapterInterface)P2P).blocking_save("input.data" + number, dsu, false);
+            ((StorageAdapterInterface)P2P).blocking_save(dsu,"input.data" + number);
             //save("input.data" + number, fc, false, number); 
             number++;
             long fin = System.currentTimeMillis();

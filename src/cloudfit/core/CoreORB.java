@@ -90,28 +90,8 @@ public class CoreORB implements ORBInterface {
         this.localStorage = storage;
     }
 
-    // Storage methods
-    /**
-     * Saves the value under the key identification
-     *
-     * @param key the key that identifies the data to be stored
-     * @param value the value to store
-     */
-    @Override
-    public void save(String key, Serializable value, boolean mutable) {
-        save(key, value, mutable, false);
-    }
-
-    /**
-     * Saves the value under the key identification
-     *
-     * @param key the key that identifies the data to be stored
-     * @param value the value to store
-     */
-    @Override
-    public void blocking_save(String key, Serializable value, boolean mutable) {
-        blocking_save(key, value, mutable, false);
-    }
+    
+    
 
     /**
      * Saves the value under the key identification
@@ -121,13 +101,11 @@ public class CoreORB implements ORBInterface {
      * @param local identify if using local storage or other (if both are
      * different)
      */
-    public void save(String key, Serializable value, boolean mutable, boolean local) {
+    @Override
+    public void save(Serializable value, String...keys) {
         if (storage != null) {
-            if (local) {
-                localStorage.save(key, value, mutable);
-            } else {
-                storage.save(key, value, mutable);
-            }
+                storage.save(value, keys);
+            
         }
     }
 
@@ -139,14 +117,12 @@ public class CoreORB implements ORBInterface {
      * @param local identify if using local storage or other (if both are
      * different)
      */
-    public void blocking_save(String key, Serializable value, boolean mutable, boolean local) {
+    @Override
+    public void blocking_save(Serializable value, String...keys) {
         if (storage != null) {
-            if (local) {
-                localStorage.save(key, value, mutable);
-            } else {
-                storage.blocking_save(key, value, mutable);
+                storage.blocking_save(value, keys);
                 //storage.save(key,value, mutable);
-            }
+            
         }
     }
 
@@ -156,18 +132,10 @@ public class CoreORB implements ORBInterface {
      * @param key the key that identifies the data to be read
      * @return the value if it exists, or null
      */
-    @Override
-    public Serializable read(String key) {
-        return read(key, false);
-    }
-
-    public Serializable read(String key, boolean local) {
+    public Serializable read(String...key) {
         if (storage != null) {
-            if (local) {
-                return localStorage.read(key);
-            } else {
                 return storage.read(key);
-            }
+            
         } else {
             return null;
         }
@@ -178,18 +146,11 @@ public class CoreORB implements ORBInterface {
      *
      * @param key the key that identifies the data to be stored
      */
-    @Override
-    public void remove(String key) {
-        remove(key, false);
-    }
-
-    public void remove(String key, boolean local) {
+    
+    public void remove(String...key) {
         if (storage != null) {
-            if (local) {
-                localStorage.remove(key);
-            } else {
                 storage.remove(key);
-            }
+            
         }
     }
 

@@ -16,7 +16,6 @@ import cloudfit.application.ApplicationInterface;
 import cloudfit.core.Message;
 import cloudfit.core.ORBInterface;
 import cloudfit.util.Number160;
-import cloudfit.util.Serialization;
 import java.io.Serializable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -272,18 +271,18 @@ public class Community implements ServiceInterface {
 
     // Storage methods
     @Override
-    public void save(String key, Serializable value, boolean mutable) {
+    public void save(Serializable value, String...keys) {
         //router.save(key, value);
-        router.blocking_save(key, value, mutable);
+        router.blocking_save(value, keys);
     }
 
     @Override
-    public Serializable read(String key) {
+    public Serializable read(String...key) {
         return router.read(key);
     }
 
     @Override
-    public void remove(String key) {
+    public void remove(String...key) {
         router.remove(key);
     }
 

@@ -21,11 +21,11 @@ import java.io.Serializable;
  */
 public interface StorageAdapterInterface {
 
-    public void save(String key, Serializable value, boolean mutable);
+    public void save(Serializable value, String...keys);
 
-    public void blocking_save(String key, Serializable value, boolean mutable);
+    public void blocking_save(Serializable value, String...keys);
     
-    public Serializable read(String key);
+    public Serializable read(String...keys);
 
-    public void remove(String key);
+    public void remove(String...keys);
 }

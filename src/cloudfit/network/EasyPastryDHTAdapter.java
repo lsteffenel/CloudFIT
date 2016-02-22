@@ -331,11 +331,11 @@ public class EasyPastryDHTAdapter implements NetworkAdapterInterface, StorageAda
      * @param value the value
      */
     @Override
-    public void save(String key, Serializable value, boolean mutable) {
+    public void save(Serializable value, String...keys) {
 
-        final String fkey = key;
+        final String fkey = keys[0];
         final Serializable fvalue = value;
-
+        boolean mutable = false;
         if (mutable) {
             environment.getProcessor().process(new Executable() {
 
@@ -444,17 +444,18 @@ public class EasyPastryDHTAdapter implements NetworkAdapterInterface, StorageAda
      * @param value the value
      */
     @Override
-    public void blocking_save(String key, Serializable value, boolean mutable) {
+    public void blocking_save(Serializable value, String...key) {
 
-        final String fkey = key;
+        final String fkey = key[0];
         final Serializable fvalue = value;
         lock.lock();
         //blocking_save_normal(key, value);
-        //blocking_save_version(key, value); 
+        //blocking_save_version(key, value);
+        boolean mutable = false;
         if (mutable)
             blocking_save_mutable(fkey, fvalue);
         else
-            blocking_save_normal(key, value);
+            blocking_save_normal(fkey, value);
         
 
         lock.unlock();
@@ -521,8 +522,8 @@ public class EasyPastryDHTAdapter implements NetworkAdapterInterface, StorageAda
      * @return the data, or null if nothing under this key
      */
     @Override
-    public Serializable read(String key) {
-        return read_normal(key);
+    public Serializable read(String...key) {
+        return read_normal(key[0]);
         //return read_version(key);
     }
 
@@ -548,7 +549,7 @@ public class EasyPastryDHTAdapter implements NetworkAdapterInterface, StorageAda
      * @param key the data identifier
      */
     @Override
-    public void remove(String key) {
+    public void remove(String...key) {
 //        try {
 //            if (dht == null) {
 //                initDHT(context);

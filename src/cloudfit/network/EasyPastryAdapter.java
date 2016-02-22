@@ -238,9 +238,9 @@ public class EasyPastryAdapter implements NetworkAdapterInterface, StorageAdapte
      * @param value the value
      */
     @Override
-    public void save(String key, Serializable value, boolean mutable) {
+    public void save(Serializable value, String...keys) {
         try {
-            dht.put(key, value);
+            dht.put(keys[0], value);
 
 
         } catch (DHTException ex) {
@@ -256,9 +256,9 @@ public class EasyPastryAdapter implements NetworkAdapterInterface, StorageAdapte
      * @param value the value
      */
     @Override
-    public void blocking_save(String key, Serializable value, boolean mutable) {
+    public void blocking_save(Serializable value, String...keys) {
         try {
-            dht.put(key, value);
+            dht.put(keys[0], value);
 
 
         } catch (DHTException ex) {
@@ -274,9 +274,9 @@ public class EasyPastryAdapter implements NetworkAdapterInterface, StorageAdapte
      * @return the data, or null if nothing under this key
      */
     @Override
-    public Serializable read(String key) {
+    public Serializable read(String...key) {
         try {
-            return dht.get(key);
+            return dht.get(key[0]);
 
 
         } catch (DHTException ex) {
@@ -292,9 +292,9 @@ public class EasyPastryAdapter implements NetworkAdapterInterface, StorageAdapte
      * @param key the data identifier
      */
     @Override
-    public void remove(String key) {
+    public void remove(String...key) {
         try {
-            dht.remove(key);
+            dht.remove(key[0]);
 
 
         } catch (DHTException ex) {

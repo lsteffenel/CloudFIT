@@ -131,7 +131,7 @@ public class Submitter {
                 DHTStorageUnit dsu = new DHTStorageUnit(null, -1, (Serializable) fc);
 
                 //((StorageAdapterInterface)P2P).blocking_save("input.data" + number, dsu, false);
-                community.save(fc.getName(), dsu, false);
+                community.save(dsu, fc.getName());
 
                 //save("input.data" + number, fc, false, number); 
                 // number++;
@@ -157,7 +157,7 @@ public class Submitter {
             System.err.println(fc.getContent().length);
             DHTStorageUnit dsu = new DHTStorageUnit(null, -1, (Serializable) fc);
 
-            community.save(fc.getName(), dsu, false);
+            community.save(dsu, fc.getName());
 
             long fin = System.currentTimeMillis();
             System.err.println(file + " saved in " + (fin - init) + " ms");

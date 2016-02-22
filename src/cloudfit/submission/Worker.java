@@ -91,18 +91,16 @@ public class Worker {
 
         //job.setReducer("Reducer");
         //for (int i=0; i<repetitions; i++) {
-        end = System.currentTimeMillis();
-
+        
 //                Thread.sleep(3000);
-        System.err.println(
-                "Total time = " + (end - start));
-
-        System.err.println(
-                "Total time = " + (end - start));
-
+        
         Scanner sc = new Scanner(System.in);
         String i = sc.next();
         //}
+        end = System.currentTimeMillis();
+
+        System.err.println(
+                "Total time = " + (end - start));
 
         System.exit(0);
 
