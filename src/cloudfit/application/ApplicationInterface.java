@@ -14,6 +14,7 @@ package cloudfit.application;
 
 import cloudfit.service.JobManagerInterface;
 import java.io.Serializable;
+import java.util.ArrayList;
 
 /**
  * ApplicationInterface resumes the behavior CloudFit expects from its
@@ -92,7 +93,7 @@ public interface ApplicationInterface extends Serializable,Cloneable {
      * Finalizes the consumer, returing its accumulator. This method is
      * <i>optional</i>.
      */
-    public Serializable finalizeApplication();
+    public Serializable finalizeApplication(ArrayList tasksResults);
     
     /**
      * Stores a serialized object using the StorageAdapter. 

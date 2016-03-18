@@ -15,6 +15,7 @@ package cloudfit.application;
 import cloudfit.service.JobManagerInterface;
 import cloudfit.storage.DHTStorageUnit;
 import java.io.Serializable;
+import java.util.ArrayList;
 
 /**
  * Abstract class to define some methods used by an application in distributed
@@ -67,6 +68,16 @@ public abstract class Distributed implements ApplicationInterface, Serializable 
         return args;
     }
 
+    
+    /**
+     * Finalizes the consumer, returing its accumulator. This method is
+     * <i>optional</i>.
+     */
+    public Serializable finalizeApplication(ArrayList tasksResults) {
+        // do nothing here, it's optional
+        return null;
+    }
+    
     /* ------------------------------------------------------------------------- */
     /**
      * Obtention de la valeur de l'accumulateur. Cette methode est disponible

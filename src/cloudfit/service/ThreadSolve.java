@@ -13,17 +13,16 @@
 package cloudfit.service;
 
 import cloudfit.application.ApplicationInterface;
-import cloudfit.util.MultiMap;
 import cloudfit.util.Number160;
 import cloudfit.util.PropertiesUtil;
 import cloudfit.util.SingleLineFormatter;
 import java.io.IOException;
 import java.io.Serializable;
 import static java.lang.Math.min;
+import java.util.ArrayList;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Semaphore;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
@@ -38,12 +37,9 @@ public class ThreadSolve implements JobManagerInterface {
 
     private Number160 jobId;
     private int nbWorkers = 4;
-    //private CyclicWorker[] threads = null;
     private int status = 0; // -1 = stateTransfer, 0 = new, 1 = running, 2 = finished
     private boolean Finished = false;
     private Serializable Accumulator = null;
-    private Semaphore available = new Semaphore(1, true);
-    //private CopyOnWriteArrayList<TaskStatus> taskList = null;
     private ExecutorService executor;
     private ApplicationInterface jobClass;
     private ServiceInterface service;
@@ -53,12 +49,7 @@ public class ThreadSolve implements JobManagerInterface {
     private JobMessage obj = null;
 
     public ThreadSolve(ServiceInterface service, Number160 jobId, ApplicationInterface jobClass, String[] args) {
-//        try {
-//            getAvailable().acquire();
-//        } catch (InterruptedException ex) {
-//            Logger.getLogger(ThreadSolve.class.getName()).log(Level.SEVERE, null, ex);
-//        }
-        try {
+      try {
             fh = new FileHandler("TestLogging.log", true);
             //fh.setFormatter(new SimpleFormatter());
             fh.setFormatter(new SingleLineFormatter());
@@ -107,13 +98,10 @@ public class ThreadSolve implements JobManagerInterface {
 
     @SuppressWarnings("empty-statement")
     public void run() {
-        //this.setName("CoreQueue");
         Thread.currentThread().setName("ThreadSolve " + jobId);
 
-        ////getAvailable().acquire();
         setFinished(false);
         setStatus(STARTED);
-        //status = 1;
         System.err.println("Tasklist.size() = " + scheduler.size());
         for (int i = 0; i < nbWorkers; i++) {
 
@@ -125,20 +113,12 @@ public class ThreadSolve implements JobManagerInterface {
         }
 
         try {
-            //while (!executor.awaitTermination(1000, TimeUnit.MILLISECONDS) && !this.isFinished()){
             while (!this.isFinished()) {
                 Thread.sleep(1000);
-                //System.out.println("sleeping");
             }
         } catch (InterruptedException ex) {
             Logger.getLogger(ThreadSolve.class.getName()).log(Level.SEVERE, null, ex);
         }
-
-        //System.err.println("FINISHED");
-        //this.setFinished(true);
-        //setStatus(COMPLETED);
-        //status = 2;
-        //getAvailable().release();
 
     }
 
@@ -154,14 +134,10 @@ public class ThreadSolve implements JobManagerInterface {
             scheduler.setTaskValue(obj, local);
 
             if (scheduler.haveAllResults()) {
-                //System.err.println("We have all results, no need to wait the Workers");
-                //executor.shutdownNow();
                 setStatus(COMPLETED);
                 setFinished(true);
         
-                //executor.shutdown();
                 executor.shutdownNow();
-                //getAvailable().release();
             }
         }
     }
@@ -172,11 +148,22 @@ public class ThreadSolve implements JobManagerInterface {
     }
 
     private void finalizeResult() {
-        if (Accumulator == null) {
-            Accumulator = new MultiMap<String, Integer>();
-            // TODO: call ApplicationInterface.finalizeApplication() to run the Accumulator code.
-            // call Scheduler to retrive all task results and compose a single accumulator
+//        if (Accumulator == null) {
+//            Accumulator = new MultiMap<String, Integer>();
+//            // TODO: call ApplicationInterface.finalizeApplication() to run the Accumulator code.
+//            // call Scheduler to retrive all task results and compose a single accumulator
+//        }
+        
+        ArrayList<Serializable> al = new ArrayList();
+        
+        for (int i=0; i< scheduler.size(); ++i)
+        {
+            TaskStatusMessage tm = (TaskStatusMessage) scheduler.getTaskValue(jobId, i);
+            al.add(tm.getTaskValue());
         }
+        
+        Accumulator = jobClass.finalizeApplication(al);
+        
         System.err.println("&&&&&&&&&&&&&&& Finalizing " + scheduler.size());
     }
 
@@ -187,14 +174,6 @@ public class ThreadSolve implements JobManagerInterface {
 
     public void setService(ServiceInterface service) {
         this.service = service;
-    }
-
-    public Semaphore getAvailable() {
-        return available;
-    }
-
-    public void setAvailable(Semaphore available) {
-        this.available = available;
     }
 
     public boolean isFinished() {
@@ -233,8 +212,6 @@ public class ThreadSolve implements JobManagerInterface {
 
     @Override
     public boolean waitFinished() throws InterruptedException {
-        //System.err.println("Semaphore = " + getAvailable().availablePermits());
-        //getAvailable().acquire();
         while (!this.isFinished())
         {
             Thread.sleep(500);
