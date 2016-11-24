@@ -8,6 +8,7 @@ package cloudfit.submission;
 
 import cloudfit.core.CoreORB;
 import cloudfit.core.CoreQueue;
+import cloudfit.core.RessourceManager;
 import cloudfit.core.TheBigFactory;
 import cloudfit.network.NetworkAdapterInterface;
 import cloudfit.network.TomP2PAdapter;
@@ -33,6 +34,7 @@ public class Worker {
 
     private static Community community;
     private static CoreORB TDTR;
+    private static String scopeName = "vlan0";
 
     public static void main(String[] args) {
         long start;
@@ -48,9 +50,15 @@ public class Worker {
                 .hasArg()
                 .withDescription("Optional port to join the P2P network")
                 .create("port");
+        Option scope = OptionBuilder.withArgName("scope")
+                .hasArg()
+                .withDescription("the name of the community to start with")
+                .create("scope");
+        
 
         options.addOption(node);
         options.addOption(port);
+        options.addOption(scope);
 
         // create the parser
         CommandLineParser parser = new PosixParser();
@@ -76,6 +84,10 @@ public class Worker {
 
         } else {
             peer = new InetSocketAddress(InetAddress.getLoopbackAddress(), 7777);
+        }
+        
+        if (line.hasOption("scope")) {
+            scopeName = line.getOptionValue("scope");
         }
        
         initNetwork(peer);
@@ -123,17 +135,30 @@ public class Worker {
 
         TDTR.setQueue(queue);
 
-        /* creates a module to plug on the main class
-         * and subscribe it to the messaging system
-         */
-        community = new Community(1, TDTR);
+        /* Creates a ressource Manager
+        */
+        
+        RessourceManager rm = TheBigFactory.getRM();
+        
 
         //NetworkAdapterInterface P2P = new EasyPastryDHTAdapter(queue, peer, community);
-        NetworkAdapterInterface P2P = new TomP2PAdapter(queue, peer, community);
+        NetworkAdapterInterface P2P = new TomP2PAdapter(queue, peer);
 
         TDTR.setNetworkAdapter(P2P);
 
+        
+        /* creates a module to plug on the main class
+         * and subscribe it to the messaging system
+         */
+        community = TheBigFactory.getCommunity(scopeName, TDTR,rm);
+
         TDTR.subscribe(community);
+        
+        if (!scopeName.equals("vlan0")) {
+            // also creates a default community for "nameless" jobs
+            Community vlan0 = TheBigFactory.getCommunity("vlan0", TDTR, rm);
+            TDTR.subscribe(vlan0);
+        }
 
         //TDTR.setStorage(new SerializedDiskStorage());
         TDTR.setStorage((StorageAdapterInterface) P2P);

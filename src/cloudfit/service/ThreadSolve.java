@@ -13,13 +13,14 @@
 package cloudfit.service;
 
 import cloudfit.application.ApplicationInterface;
+import cloudfit.core.RessourceManager;
 import cloudfit.util.Number160;
-import cloudfit.util.PropertiesUtil;
 import cloudfit.util.SingleLineFormatter;
 import java.io.IOException;
 import java.io.Serializable;
 import static java.lang.Math.min;
 import java.util.ArrayList;
+import java.util.Properties;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -47,9 +48,11 @@ public class ThreadSolve implements JobManagerInterface {
     private static final Logger log = Logger.getLogger(ThreadSolve.class.getName());
     private static FileHandler fh = null;
     private JobMessage obj = null;
+    private RessourceManager RM = null;
+    private Properties reqRessources = null;
 
-    public ThreadSolve(ServiceInterface service, Number160 jobId, ApplicationInterface jobClass, String[] args) {
-      try {
+    public ThreadSolve(ServiceInterface service, Number160 jobId, ApplicationInterface jobClass, String[] args, Properties reqRessources) {
+        try {
             fh = new FileHandler("TestLogging.log", true);
             //fh.setFormatter(new SimpleFormatter());
             fh.setFormatter(new SingleLineFormatter());
@@ -66,6 +69,8 @@ public class ThreadSolve implements JobManagerInterface {
 
         this.jobClass = jobClass;
 
+        this.reqRessources = reqRessources;
+
         this.setStatus(NEW);
 
         jobClass.setArgs(args);
@@ -80,19 +85,36 @@ public class ThreadSolve implements JobManagerInterface {
         jobClass.numberOfBlocks();
         System.err.println("InitNumberofBlocks = " + jobClass.getNumberOfBlocks());
         scheduler = new Scheduler(jobId, jobClass.getNumberOfBlocks());
+//
+//        // first, get the number of available cores
+//        nbWorkers = Runtime.getRuntime().availableProcessors();
+//        // now, checks if the user definied max nbworkers
+//        String prop = PropertiesUtil.getProperty("nbworkers");
+//        if (prop != null) {
+//            nbWorkers = min(Integer.parseInt(prop), nbWorkers);
+//        }
 
-        // first, get the number of available cores
-        nbWorkers = Runtime.getRuntime().availableProcessors();
-        // now, checks if the user definied max nbworkers
-        String prop = PropertiesUtil.getProperty("nbworkers");
-        if (prop != null) {
-            nbWorkers = min(Integer.parseInt(prop), nbWorkers);
+        RM = service.getRessourceManager();
+
+        boolean resourcesMatch = RM.checkRequirements(reqRessources); // check if the requirements match with the CPU/memory/etc 
+
+        if (resourcesMatch) {
+
+            do {
+                nbWorkers = RM.howManyCores();
+                if (nbWorkers == 0) {
+                    nbWorkers = 1;
+                }
+
+                // adapt the number of the workers to the size of the job
+                nbWorkers = min(jobClass.getNumberOfBlocks(), nbWorkers);
+            } while (!RM.tryAcquire(nbWorkers));
+
+            //threads = new CyclicWorker[nbWorkers];
+            executor = Executors.newFixedThreadPool(nbWorkers);
+        } else {
+            setStatus(NOMATCH);
         }
-
-        // adapt the number of the workers to the size of the job
-        nbWorkers = min(jobClass.getNumberOfBlocks(), nbWorkers);
-        //threads = new CyclicWorker[nbWorkers];
-        executor = Executors.newFixedThreadPool(nbWorkers);
 
     }
 
@@ -119,7 +141,7 @@ public class ThreadSolve implements JobManagerInterface {
         } catch (InterruptedException ex) {
             Logger.getLogger(ThreadSolve.class.getName()).log(Level.SEVERE, null, ex);
         }
-
+        //RM.release(nbWorkers);
     }
 
     @Override
@@ -134,9 +156,10 @@ public class ThreadSolve implements JobManagerInterface {
             scheduler.setTaskValue(obj, local);
 
             if (scheduler.haveAllResults()) {
+                RM.release(nbWorkers);
                 setStatus(COMPLETED);
                 setFinished(true);
-        
+
                 executor.shutdownNow();
             }
         }
@@ -153,17 +176,16 @@ public class ThreadSolve implements JobManagerInterface {
 //            // TODO: call ApplicationInterface.finalizeApplication() to run the Accumulator code.
 //            // call Scheduler to retrive all task results and compose a single accumulator
 //        }
-        
+
         ArrayList<Serializable> al = new ArrayList();
-        
-        for (int i=0; i< scheduler.size(); ++i)
-        {
+
+        for (int i = 0; i < scheduler.size(); ++i) {
             TaskStatusMessage tm = (TaskStatusMessage) scheduler.getTaskValue(jobId, i);
             al.add(tm.getTaskValue());
         }
-        
+
         Accumulator = jobClass.finalizeApplication(al);
-        
+
         System.err.println("&&&&&&&&&&&&&&& Finalizing " + scheduler.size());
     }
 
@@ -212,12 +234,11 @@ public class ThreadSolve implements JobManagerInterface {
 
     @Override
     public boolean waitFinished() throws InterruptedException {
-        while (!this.isFinished())
-        {
+        while (!this.isFinished()) {
             Thread.sleep(500);
         }
         finalizeResult();
-        
+
         return Finished;
     }
 
@@ -234,7 +255,7 @@ public class ThreadSolve implements JobManagerInterface {
     @Override
     public Serializable getJobMessage() {
 
-        JobMessage stateTransfer = new JobMessage(this.jobId, obj.getJobClass(), obj.getArgs());
+        JobMessage stateTransfer = new JobMessage(this.jobId, obj.getJobClass(), obj.getArgs(), obj.getReqs());
         stateTransfer.setJar(obj.getJar());
         stateTransfer.setApp(obj.getApp());
         //stateTransfer.setTaskValue(taskList);
@@ -259,17 +280,17 @@ public class ThreadSolve implements JobManagerInterface {
 
     // Storage methods
     @Override
-    public void save(Serializable value, String...keys) {
+    public void save(Serializable value, String... keys) {
         service.save(value, keys);
     }
 
     @Override
-    public Serializable read(String...key) {
+    public Serializable read(String... key) {
         return service.read(key);
     }
 
     @Override
-    public void remove(String...key) {
+    public void remove(String... key) {
         service.remove(key);
     }
 

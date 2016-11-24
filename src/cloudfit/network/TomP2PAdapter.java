@@ -7,7 +7,6 @@ package cloudfit.network;
 
 import cloudfit.core.CoreQueue;
 import cloudfit.core.Message;
-import cloudfit.service.Community;
 import cloudfit.storage.StorageAdapterInterface;
 import cloudfit.util.PropertiesUtil;
 import java.io.EOFException;
@@ -22,11 +21,13 @@ import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.net.UnknownHostException;
 import java.nio.channels.SocketChannel;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -46,6 +47,7 @@ import net.tomp2p.p2p.PeerBuilder;
 import net.tomp2p.p2p.PostRoutingFilter;
 import net.tomp2p.p2p.SlowPeerFilter;
 import net.tomp2p.peers.Number160;
+import net.tomp2p.peers.Number640;
 import net.tomp2p.peers.PeerAddress;
 import net.tomp2p.rpc.ObjectDataReply;
 import net.tomp2p.storage.Data;
@@ -61,7 +63,7 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
 
     private CoreQueue MsgQueue;
     //private ReqServer rs = null;
-    private Community community = null;
+    //private Community community = null;
     //InetSocketAddress add = null;
 
     //final private Peer peer;
@@ -78,7 +80,8 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
         return peer.peerID();
     }
 
-    public TomP2PAdapter(CoreQueue queue, InetSocketAddress add, Community comm) {
+//    public TomP2PAdapter(CoreQueue queue, InetSocketAddress add, Community comm) {
+    public TomP2PAdapter(CoreQueue queue, InetSocketAddress add) {
         try {
             int port = 7777;
             String boundPort = PropertiesUtil.getProperty("port");
@@ -99,7 +102,7 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
                     }
                 }
             }
-            this.community = comm;
+            //this.community = comm;
             //serialTool = new Serialization();
             //this.add = add;
             this.MsgQueue = queue;
@@ -126,16 +129,26 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
 
             //ConfigurationStore cs = Configurations.defaultStoreConfiguration();
             //Number160 id = Number160.createHash(((Double) Math.random()).toString());
+            String sid = null;
+
             NetworkInterface iface = ifDetect();
-            //System.err.println(iface.getHardwareAddress() + " " + iface.getInetAddresses().nextElement().getHostAddress() + " ");
-            //String sid =   iface.getHardwareAddress().toString() + " ";
-            byte[] mac = iface.getHardwareAddress();
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < mac.length; i++) {
-                sb.append(String.format("%02X%s", mac[i], (i < mac.length - 1) ? "-" : ""));
+            // if the code cannot find a suitable interface to contact Internet (like when offline)
+            // we have iface=null. Therefore, the ID will be set without MAC and inetaddress
+            if (iface != null) {
+                //System.err.println(iface.getHardwareAddress() + " " + iface.getInetAddresses().nextElement().getHostAddress() + " ");
+                //String sid =   iface.getHardwareAddress().toString() + " ";
+                byte[] mac = iface.getHardwareAddress();
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < mac.length; i++) {
+                    sb.append(String.format("%02X%s", mac[i], (i < mac.length - 1) ? "-" : ""));
+                }
+                //System.err.println(iface.getDisplayName() + " " + sb.toString() );
+                sid = sb.toString() + " " + iface.getInetAddresses().nextElement().getHostAddress() + " " + port;
+
+            } else {
+                sid = "noiface 00:00:00:00:00:00 " + port;
+
             }
-            //System.err.println(iface.getDisplayName() + " " + sb.toString() );
-            String sid = sb.toString() + " " + iface.getInetAddresses().nextElement().getHostAddress() + " " + port;
             Number160 id = Number160.createHash(sid);
             System.err.println(sid + "\n" + id);
 
@@ -353,6 +366,9 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
                     // try to connect to *somewhere*
                     socket.connect(new InetSocketAddress("www.univ-reims.fr", 80));
                 } catch (IOException ex) {
+                    //ex.printStackTrace();
+                    continue;
+                } catch (java.nio.channels.UnresolvedAddressException ex) {
                     //ex.printStackTrace();
                     continue;
                 } finally {
@@ -574,20 +590,82 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
     @Override
     public void blocking_save(Serializable value, String... keys) {
         try {
-
+            // we consider the following order for keys: 0 = location, 1 = domain, 2 = content, 3 = version
+            // in all cases where key2==null the content key is equal to the location key = hash (key0)
+            // This means that in most cases the data will be stored in the location with the key = content key
+            // Using a content key different from location may allow "targetting" a node to store different ressources
             Data dt = new Data(value);
             PutBuilder pb;
-            switch (keys.length) {
-                case 1:
-                    pb = peer.put(Number160.createHash(keys[0])).domainKey(Number160.ZERO).versionKey(Number160.ZERO).data(dt);
-                    break;
-                case 2:
-                    pb = peer.put(Number160.createHash(keys[0])).domainKey(Number160.createHash(keys[1])).versionKey(Number160.ZERO).data(dt);
-                    break;
-                default:
-                    pb = peer.put(Number160.createHash(keys[0])).domainKey(Number160.createHash(keys[1])).versionKey(Number160.createHash(keys[2])).data(dt);
-                    break;
+            Number160 location = Number160.ZERO;
+            Number160 domain = Number160.ZERO;
+            Number160 content = Number160.ZERO;
+            Number160 version = Number160.ZERO;
+            if (keys == null) {
+
+                pb = peer.put(location).data(content, dt);
+
+            } else {
+
+                switch (keys.length) {
+
+                    case 1:
+                        if (keys[0] != null) {
+                            location = Number160.createHash(keys[0]);
+                        }
+                        content = location;
+                        pb = peer.put(location).data(content, dt);
+                        //System.out.println(keys[0]+" "+location + " " + content);
+
+                        //pb = peer.put(Number160.createHash(keys[0])).domainKey(Number160.ZERO).versionKey(Number160.ZERO).data(dt);
+                        break;
+                    case 2:
+                        if (keys[0] != null) {
+                            location = Number160.createHash(keys[0]);
+                        }
+                        if (keys[1] != null) {
+                            domain = Number160.createHash(keys[1]);
+                        }
+                        content = location;
+                        pb = peer.put(location).data(domain, content, dt);
+
+                        //pb = peer.put(Number160.createHash(keys[0])).domainKey(Number160.createHash(keys[1])).versionKey(Number160.ZERO).data(dt);
+                        break;
+                    case 3:
+                        if (keys[0] != null) {
+                            location = Number160.createHash(keys[0]);
+                        }
+                        if (keys[1] != null) {
+                            domain = Number160.createHash(keys[1]);
+                        }
+                        content = location;
+                        if (keys[2] != null) {
+                            content = Number160.createHash(keys[2]);
+                        }
+                        pb = peer.put(location).data(location, domain, content, version, dt);
+
+                        break;
+                    default:
+                        //pb = peer.put(Number160.createHash(keys[0])).domainKey(Number160.createHash(keys[1])).versionKey(Number160.createHash(keys[2])).data(dt);
+                        if (keys[0] != null) {
+                            location = Number160.createHash(keys[0]);
+                        }
+                        if (keys[1] != null) {
+                            domain = Number160.createHash(keys[1]);
+                        }
+                        content = location;
+                        if (keys[2] != null) {
+                            content = Number160.createHash(keys[2]);
+                        }
+                        if (keys[3] != null) {
+                            version = Number160.createHash(keys[3]);
+                        }
+                        pb = peer.put(location).data(location, domain, content, version, dt);
+
+                        break;
+                }
             }
+            //pb = peer.put(location).data(location, domain, content, version, dt);
+
             if (spf != null) {
                 pb.addPostRoutingFilter(spf);
             }
@@ -613,31 +691,209 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
                     .getName()).log(Level.SEVERE, null, ex);
         }
     }
+//    @Override
+//    public void blocking_save(Serializable value, String... keys) {
+//        try {
+//            // we consider the following order for keys: 0 = location, 1 = domain, 2 = version, 3 = content
+//            // in all cases but key3 the content key is equal to the location key = hash (key0)
+//            // This means that in most cases the data will be stored in the location with the key = content key
+//            // Using a content key different from location may allow "targetting" a node to store different ressources
+//            Data dt = new Data(value);
+//            PutBuilder pb;
+//            Number160 location = Number160.ZERO;
+//            Number160 domain = Number160.ZERO;
+//            Number160 content = Number160.ZERO;
+//            Number160 version = Number160.ZERO;
+//            switch (keys.length) {
+//                case 1:
+//                    if (keys[0]!=null)
+//                        location = Number160.createHash(keys[0]);
+//                    content = location;
+//                    pb = peer.put(location).data(content, dt);
+//                    //System.out.println(keys[0]+" "+location + " " + content);
+//            
+//                    //pb = peer.put(Number160.createHash(keys[0])).domainKey(Number160.ZERO).versionKey(Number160.ZERO).data(dt);
+//                    break;
+//                case 2:
+//                    if (keys[0]!=null)
+//                        location = Number160.createHash(keys[0]);
+//                    if (keys[1]!=null)
+//                        domain = Number160.createHash(keys[1]);
+//                    content = location;
+//                    pb = peer.put(location).data(domain, content, dt);
+//            
+//                    //pb = peer.put(Number160.createHash(keys[0])).domainKey(Number160.createHash(keys[1])).versionKey(Number160.ZERO).data(dt);
+//                    break;
+//                case 3:
+//                    if (keys[0]!=null)
+//                        location = Number160.createHash(keys[0]);
+//                    if (keys[1]!=null)
+//                        domain = Number160.createHash(keys[1]);
+//                    content = location;
+//                    if (keys[2]!=null)
+//                        version = Number160.createHash(keys[2]);
+//                    pb = peer.put(location).data(location, domain, content, version, dt);
+//            
+//                    break;
+//                default:
+//                    //pb = peer.put(Number160.createHash(keys[0])).domainKey(Number160.createHash(keys[1])).versionKey(Number160.createHash(keys[2])).data(dt);
+//                    if (keys[0]!=null)
+//                        location = Number160.createHash(keys[0]);
+//                    if (keys[1]!=null)
+//                        domain = Number160.createHash(keys[1]);
+//                    content = location;
+//                    if (keys[2]!=null)
+//                        version = Number160.createHash(keys[2]);
+//                    if (keys[3]!=null)
+//                        content = Number160.createHash(keys[3]);
+//                    pb = peer.put(location).data(location, domain, content, version, dt);
+//            
+//                    break;
+//            }
+//            //pb = peer.put(location).data(location, domain, content, version, dt);
+//            
+//            if (spf != null) {
+//                pb.addPostRoutingFilter(spf);
+//            }
+//
+//            //PutBuilder pb = peer.put(Number160.createHash(key)).data(dt);
+//            /*  commented to test delays
+//             pb.idleTCPMillis(60000);
+//             pb.idleUDPMillis(60000);
+//             pb.slowResponseTimeoutSeconds(60000);
+//             */
+//            //pb.forceTCP();
+//            FuturePut futurePut = pb.start();
+//            //futurePut.awaitUninterruptibly(4000);
+//            futurePut.awaitUninterruptibly();
+//            dt.release();
+//            //DBase.commit();
+//            //DBase.getEngine().clearCache();
+//            //DBase.getEngine().compact();
+//
+//            //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+//        } catch (IOException ex) {
+//            Logger.getLogger(TomP2PAdapter.class
+//                    .getName()).log(Level.SEVERE, null, ex);
+//        }
+//    }
 
     @Override
     public Serializable read(String... keys) {
 
         //FutureGet futureDHT = peer.get(Number160.ZERO).contentKey(Number160.createHash(key)).start();
-        GetBuilder gt;
-        switch (keys.length) {
+        // data(contentKey,data)
+        Number160 location = Number160.ZERO;
+        Number160 domain = Number160.ZERO;
+        Number160 content = Number160.ZERO;
+        Number160 version = Number160.ZERO;
+        boolean multiple = false; // specifies if there is a single response or a DataMap
+
+        GetBuilder gt = null;
+
+        if (keys == null) {
+            gt = peer.get(location).contentKey(content);
+        } else {
+            switch (keys.length) {
                 case 1:
-                    gt = peer.get(Number160.createHash(keys[0])).domainKey(Number160.ZERO).versionKey(Number160.ZERO);
+                    // two possibilities for keyL
+                    //    id --> ok (search)
+                    //    null --> impossible (so return null)
+                    if (keys[0] == null) {
+                        // should return null but in save we store a value in location=Number160.ZERO
+                        //return null;
+                    } else {
+                        location = Number160.createHash(keys[0]);
+                    }
+                    content = location;
+                    //System.out.println(keys[0]+" "+location + " " + content);
+                    gt = peer.get(location).contentKey(content);
+                    // Why not setting version/domain? perhaps the last version is not zero...
+                    //gt = peer.get(location).domainKey(Number160.ZERO).contentKey(content).versionKey(Number160.ZERO);
+
                     break;
                 case 2:
-                    gt = peer.get(Number160.createHash(keys[0])).domainKey(Number160.createHash(keys[1])).versionKey(Number160.ZERO);
+                    // four possibilities for keyL x keyD
+                    // id, id --> search L, D
+                    // id, null --> search on L, D=ZERO
+                    // null, id --> search on L=ZERO, D
+                    // null, null --> search on L=ZERO, D=ZERO
+                    if (keys[0] != null) {
+                        location = Number160.createHash(keys[0]);
+                    }
+                    if (keys[1] != null) {
+                        domain = Number160.createHash(keys[1]);
+                    }
+                    content = location;
+                    gt = peer.get(location).domainKey(domain).contentKey(content);
+                    // same as above. If no version is given, take the last.
+                    //gt = peer.get(location).domainKey(domain).versionKey(Number160.ZERO);
+
+                    break;
+                case 3:
+
+                    if (keys[0] != null) {
+                        location = Number160.createHash(keys[0]);
+                        content = location;
+                    }
+                    if (keys[1] != null) {
+                        domain = Number160.createHash(keys[1]);
+                    }
+                    if (keys[2] != null) {
+                        content = Number160.createHash(keys[2]);
+                    }
+                    gt = peer.get(location).domainKey(domain).contentKey(content);
+
                     break;
                 default:
-                    gt = peer.get(Number160.createHash(keys[0])).domainKey(Number160.createHash(keys[1])).versionKey(Number160.createHash(keys[2]));
-                    break;
+                    if (keys[0] != null) {
+                        location = Number160.createHash(keys[0]);
+                        content = location;
+                    }
+                    if (keys[1] != null) {
+                        domain = Number160.createHash(keys[1]);
+                    }
+                    if (keys[2] != null) {
+                        content = Number160.createHash(keys[2]);
+                    }
+                    if (keys[3] != null) { // if has version use it, else get all versions
+                        if (keys[3].equals("_LAST")) {
+                            gt = peer.get(location).domainKey(domain).contentKey(content).getLatest();
+                        } else {
+                            version = Number160.createHash(keys[3]);
+                            gt = peer.get(location).domainKey(domain).contentKey(content).versionKey(version);
+                        }
+                    } else {
+                        gt = peer.get(location).domainKey(domain).contentKey(content).all();
+                        multiple = true;
+
+                    }
+
             }
+        }
         FutureGet futureDHT = gt.start();
         futureDHT.awaitUninterruptibly();
         if (futureDHT.isSuccess()) {
-
             Object obj;
             try {
-                obj = futureDHT.data().object();
+                if (multiple == true) {
+                    Map<Number640, Data> dm = futureDHT.dataMap();
+                    ArrayList al = new ArrayList();
+                    Iterator it = dm.values().iterator();
+                    while (it.hasNext()) {
+                        Data dt = (Data) it.next();
+                        al.add(dt.object());
+                    }
+                    obj = al;
+                    //System.out.println("Multiple");
+
+                } else {
+                    obj = futureDHT.data().object();
+                    //System.out.println("simple");
+
+                }
                 if (obj == null) {
+                    //System.out.println("Objet numm");
                     return null;
                 } else {
                     return (Serializable) obj;
@@ -655,25 +911,182 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
                         .getName()).log(Level.SEVERE, null, ex);
             }
 
+        } else {
+            System.out.println("not success");
         }
         return null;
         //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
+//    @Override
+//    public Serializable read(String... keys) {
+//
+//        //FutureGet futureDHT = peer.get(Number160.ZERO).contentKey(Number160.createHash(key)).start();
+//        // data(contentKey,data)
+//        Number160 location = Number160.ZERO;
+//        Number160 domain = Number160.ZERO;
+//        Number160 content = Number160.ZERO;
+//        Number160 version = Number160.ZERO;
+//        boolean multiple = false; // specifies if there is a single response or a DataMap
+//
+//        GetBuilder gt;
+//        switch (keys.length) {
+//            case 1:
+//                // two possibilities for keyL
+//                //    id --> ok (search)
+//                //    null --> impossible (so return null)
+//                if (keys[0] == null) {
+//                    return null;
+//                } else {
+//                    location = Number160.createHash(keys[0]);
+//                    content = location;
+//                    //System.out.println(keys[0]+" "+location + " " + content);
+//                    gt = peer.get(location).contentKey(content);
+//                    // Why not setting version/domain? perhaps the last version is not zero...
+//                    //gt = peer.get(location).domainKey(Number160.ZERO).contentKey(content).versionKey(Number160.ZERO);
+//                    
+//                }
+//                break;
+//            case 2:
+//                // four possibilities for keyL x keyD
+//                // id, id --> search (ok)
+//                // id, null --> null (security "breach" if searching all domains. Also, all() doesn't work for domain)
+//                // null, id --> null
+//                // null, null --> null
+//                if (keys[0] == null) {
+//                    return null;
+//                } else {
+//                    if (keys[1] == null) {
+//                        return null;
+//                    } else {
+//                        location = Number160.createHash(keys[0]);
+//                        domain = Number160.createHash(keys[1]);
+//                        content = location;
+//                        gt = peer.get(location).domainKey(domain).contentKey(content);
+//                        // same as above. If no version is given, take the last.
+//                        //gt = peer.get(location).domainKey(domain).versionKey(Number160.ZERO);
+//                    }
+//                }
+//
+//                break;
+//            case 3:
+//                // eight possibilities for keyL x keyD x keyV but only two usable (all L,D with null cannot work)
+//                // id, id, id --> search (ok)
+//                // id, id, null --> search all
+//                if (keys[0] == null) {
+//                    return null;
+//                } else {
+//                    if (keys[1] == null) {
+//                        return null;
+//                    }
+//                    else {
+//                        location = Number160.createHash(keys[0]);
+//                        domain = Number160.createHash(keys[1]);
+//                        content = location;
+//                
+//                        if (keys[2] != null) { // if has version use it, else get all versions
+//                            version = Number160.createHash(keys[2]);
+//                            gt = peer.get(location).domainKey(domain).contentKey(content).versionKey(version);
+//                        } else {
+//                            gt = peer.get(location).domainKey(domain).contentKey(content).all();
+//                            multiple = true;
+//                        }
+//                    }
+//                }
+//                break;
+//            default:
+//                // sixteen possibilities for keyL x keyD x keyV x keyC but only V and C are interesting
+//                // Vid, Cid --> search (ok)
+//                // Vid, Cnull --> search with L instead of C
+//                // Vnull, Cid --> search all()
+//                // Vnull, Cnull --> search all() with L instead of C
+//                if (keys[0] == null) {
+//                    return null;
+//                } else {
+//                    if (keys[1] == null) {
+//                        return null;
+//                    }
+//                    else {
+//                        location = Number160.createHash(keys[0]);
+//                        domain = Number160.createHash(keys[1]);
+//                        if (keys[3] == null)
+//                        {
+//                            content = location;
+//                        }
+//                        else {
+//                            content = Number160.createHash(keys[3]);
+//                        }
+//                
+//                        if (keys[2] != null) { // if has version use it, else get all versions
+//                            version = Number160.createHash(keys[2]);
+//                            gt = peer.get(location).domainKey(domain).contentKey(content).versionKey(version);
+//                        } else {
+//                            gt = peer.get(location).domainKey(domain).contentKey(content).all();
+//                            multiple = true;
+//                        }
+//                    }
+//                }
+//        }
+//        FutureGet futureDHT = gt.start();
+//        futureDHT.awaitUninterruptibly();
+//        if (futureDHT.isSuccess()) {
+//            Object obj;
+//            try {
+//                if (multiple == true) {
+//                    Map<Number640, Data> dm = futureDHT.dataMap();
+//                    ArrayList al = new ArrayList();
+//                    Iterator it = dm.values().iterator();
+//                    while (it.hasNext()) {
+//                        Data dt = (Data) it.next();
+//                        al.add(dt.object());
+//                    }
+//                    obj = al;
+//                    //System.out.println("Multiple");
+//
+//                } else {
+//                    obj = futureDHT.data().object();
+//                    //System.out.println("simple");
+//
+//                }
+//                if (obj == null) {
+//                    //System.out.println("Objet numm");
+//                    return null;
+//                } else {
+//                    return (Serializable) obj;
+//                }
+//            } catch (EOFException ex) {
+//                return null;
+//            } catch (NullPointerException ex) {
+//                return null;
+//
+//            } catch (ClassNotFoundException ex) {
+//                Logger.getLogger(TomP2PAdapter.class
+//                        .getName()).log(Level.SEVERE, null, ex);
+//            } catch (IOException ex) {
+//                Logger.getLogger(TomP2PAdapter.class
+//                        .getName()).log(Level.SEVERE, null, ex);
+//            }
+//
+//        } else {
+//            //System.out.println("not success");
+//        }
+//        return null;
+//        //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+//    }
     @Override
     public void remove(String... keys) {
-        RemoveBuilder rb ;
+        RemoveBuilder rb;
         switch (keys.length) {
-                case 1:
-                    rb = peer.remove(Number160.createHash(keys[0])).domainKey(Number160.ZERO).versionKey(Number160.ZERO);
-                    break;
-                case 2:
-                    rb = peer.remove(Number160.createHash(keys[0])).domainKey(Number160.createHash(keys[1])).versionKey(Number160.ZERO);
-                    break;
-                default:
-                    rb = peer.remove(Number160.createHash(keys[0])).domainKey(Number160.createHash(keys[1])).versionKey(Number160.createHash(keys[2]));
-                    break;
-            }
+            case 1:
+                rb = peer.remove(Number160.createHash(keys[0])).domainKey(Number160.ZERO).versionKey(Number160.ZERO);
+                break;
+            case 2:
+                rb = peer.remove(Number160.createHash(keys[0])).domainKey(Number160.createHash(keys[1])).versionKey(Number160.ZERO);
+                break;
+            default:
+                rb = peer.remove(Number160.createHash(keys[0])).domainKey(Number160.createHash(keys[1])).versionKey(Number160.createHash(keys[2]));
+                break;
+        }
         rb.start().awaitUninterruptibly();
 
         //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.

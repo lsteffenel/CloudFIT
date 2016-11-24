@@ -13,6 +13,7 @@
 package cloudfit.application;
 
 import cloudfit.service.JobManagerInterface;
+import cloudfit.util.Number160;
 import java.io.Serializable;
 import java.util.ArrayList;
 
@@ -76,7 +77,7 @@ public interface ApplicationInterface extends Serializable,Cloneable {
      * <i>optional</i>.
      */
     //public Serializable consumeBlock(int number, Serializable value);
-    public void consumeBlock(Serializable accumulator, int number, Serializable value);
+    //public void consumeBlock(Serializable accumulator, int number, Serializable value);
 
     /**
      * executes a task for a job.
@@ -87,7 +88,7 @@ public interface ApplicationInterface extends Serializable,Cloneable {
      * Consumer starter : initialises the task consumer component. This method
      * is <i>optional</i>.
      */
-    public Serializable initializeApplication();
+    //public Serializable initializeApplication();
 
     /**
      * Finalizes the consumer, returing its accumulator. This method is
@@ -106,8 +107,7 @@ public interface ApplicationInterface extends Serializable,Cloneable {
      */
     public Serializable read(String...key);
     
-    public void remove(String...key);
-    
+    public void remove(String...key);    
     
 }
 

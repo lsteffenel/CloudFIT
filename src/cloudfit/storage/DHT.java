@@ -130,7 +130,7 @@ public class DHT {
 //        TDTR.setStorage((StorageAdapterInterface) P2P);
 //        
         
-        NetworkAdapterInterface P2P = new TomP2PAdapter(null, peer, null);
+        NetworkAdapterInterface P2P = new TomP2PAdapter(null, peer);
         
         start = System.currentTimeMillis();
 
@@ -216,7 +216,7 @@ public class DHT {
     private NetworkAdapterInterface initNetwork(InetSocketAddress peer) {
         
         
-        NetworkAdapterInterface P2P = new TomP2PAdapter(null, peer, null);
+        NetworkAdapterInterface P2P = new TomP2PAdapter(null, peer);
         System.err.println("starting network");
         
         return P2P;          

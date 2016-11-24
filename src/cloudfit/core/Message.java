@@ -20,7 +20,7 @@ import java.io.Serializable;
  */
 public class Message implements Serializable {
 
-    public Long dest;
+    public String dest;
     public Serializable content;
 
     /**
@@ -28,7 +28,7 @@ public class Message implements Serializable {
      * @param dest the identifier of the destination at the Service level 
      * @param content the message to send
      */
-    public Message(Long dest, Serializable content) {
+    public Message(String dest, Serializable content) {
         this.dest = dest;
         this.content = content;
     }

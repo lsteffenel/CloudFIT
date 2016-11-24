@@ -34,7 +34,8 @@ public class PropertiesUtil {
             value = prop.getProperty(property);
 
         } catch (IOException ex) {
-            ex.printStackTrace();
+            //ex.printStackTrace();
+            System.err.println("cloudfit.properties not found");
         } finally {
             if (input != null) {
                 try {

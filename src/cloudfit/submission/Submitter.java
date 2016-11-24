@@ -7,6 +7,7 @@ package cloudfit.submission;
  */
 import cloudfit.core.CoreORB;
 import cloudfit.core.CoreQueue;
+import cloudfit.core.RessourceManager;
 import cloudfit.core.TheBigFactory;
 import cloudfit.network.NetworkAdapterInterface;
 import cloudfit.network.TomP2PAdapter;
@@ -21,6 +22,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Properties;
 import java.util.Scanner;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -215,13 +217,19 @@ public class Submitter {
 
         TDTR.setQueue(queue);
 
+        
+        /* Creates a ressource Manager
+        */
+        
+        RessourceManager rm = TheBigFactory.getRM();
+        
         /* creates a module to plug on the main class
          * and subscribe it to the messaging system
          */
-        community = new Community(1, TDTR);
+        community = TheBigFactory.getCommunity("1", TDTR, rm);
 
         //NetworkAdapterInterface P2P = new EasyPastryDHTAdapter(queue, peer, community);
-        NetworkAdapterInterface P2P = new TomP2PAdapter(queue, peer, community);
+        NetworkAdapterInterface P2P = new TomP2PAdapter(queue, peer);
 
         TDTR.setNetworkAdapter(P2P);
 
@@ -239,7 +247,10 @@ public class Submitter {
         Serializable result = null;
         try {
             // ici on indique la classe qui fera le MAP
-            mapperId = community.plug(jar, app, mapargs);
+            Properties reqs = new Properties();
+            reqs.put("Mem", "4G");
+            reqs.put("Disk", "30G");
+            mapperId = community.plug(jar, app, mapargs,reqs);
             System.err.println("mapperId = " + mapperId);
             result = community.waitJob(mapperId);
         } catch (Exception ex) {

@@ -109,7 +109,8 @@ public class CoreQueue extends Thread {
 
                     ((ServiceInterface) SvcQueues.get(msg.dest)).put(msg.content);
                 } else {
-                    System.err.println("msg without dest service!!!");
+                    // This message is now useless as a node may not have all communities running
+                    //System.err.println("msg without dest service!!!");
                 }
 
             } catch (InterruptedException ex) {

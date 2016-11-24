@@ -31,7 +31,7 @@ import java.util.logging.Logger;
 public class ActiveBlockingQueue extends Thread {
 
     private LinkedBlockingQueue messageList;
-    private long processId = 0;
+    private String processId = "0";
     private ServiceInterface CApp = null;
 
     /**
@@ -41,7 +41,7 @@ public class ActiveBlockingQueue extends Thread {
      * multiplex messages)
      * @param CApp The associated service
      */
-    public ActiveBlockingQueue(long processId, ServiceInterface CApp) {
+    public ActiveBlockingQueue(String processId, ServiceInterface CApp) {
         this.setName("ActiveBlockingQueue proc " + processId);
         this.setPriority(Thread.NORM_PRIORITY + 1);
         messageList = new LinkedBlockingQueue();

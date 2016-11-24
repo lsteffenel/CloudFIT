@@ -14,6 +14,7 @@ package cloudfit.application;
 
 import cloudfit.service.JobManagerInterface;
 import cloudfit.storage.DHTStorageUnit;
+import cloudfit.util.Number160;
 import java.io.Serializable;
 import java.util.ArrayList;
 
@@ -130,6 +131,7 @@ public abstract class Distributed implements ApplicationInterface, Serializable 
     public void remove(String...key) {
         threadSolve.remove(key);
     }
+   
     
     
 }

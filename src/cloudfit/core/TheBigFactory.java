@@ -16,15 +16,16 @@ package cloudfit.core;
 import cloudfit.application.ApplicationInterface;
 import cloudfit.network.EasyPastryAdapter;
 import cloudfit.network.NetworkAdapterInterface;
+import cloudfit.network.TomP2PAdapter;
 import cloudfit.service.Community;
 import cloudfit.service.JobManagerInterface;
 import cloudfit.service.ServiceInterface;
 import cloudfit.service.ThreadSolve;
-import cloudfit.service.ThreadSolveDHT;
 import cloudfit.storage.SerializedDiskStorage;
 import cloudfit.storage.StorageAdapterInterface;
 import cloudfit.util.Number160;
 import java.net.InetSocketAddress;
+import java.util.Properties;
 
 /**
  * Main factory of the CloudFIT framework, provides object of several classes
@@ -32,11 +33,17 @@ import java.net.InetSocketAddress;
  * @author Luiz Angelo STEFFENEL <Luiz-Angelo.Steffenel@univ-reims.fr>
  */
 public class TheBigFactory {
-    public static ServiceInterface getCommunity(long id, ORBInterface orb)
+    
+    
+    
+    public static Community getCommunity(String id, ORBInterface orb, RessourceManager rm)
     {
-        return new Community(id, orb);
+        return new Community(id, orb, rm);
     }
     
+    public static RessourceManager getRM() {
+        return new RessourceManager();
+    }
     
     public static ORBInterface getORB()
     {
@@ -64,14 +71,62 @@ public class TheBigFactory {
         return new SerializedDiskStorage();
     }
     
-    public static JobManagerInterface getThreadSolve(ServiceInterface service, Number160 jobId, ApplicationInterface jobClass, String[] args)
+    public static JobManagerInterface getThreadSolve(ServiceInterface service, Number160 jobId, ApplicationInterface jobClass, String[] args, Properties props)
     {
-        //ThreadSolve TS = new ThreadSolveDHT(service, jobId, jobClass, args);
 //        Class cl = Class.forName("com.bla.TestActivity");
 //        ThreadSolve ts2 = (ThreadSolve)cl.getConstructor(ServiceInterface.class, int.class , ApplicationInterface.class , String.class).newInstance(service, jobId, jobClass, args);
-        ThreadSolve TS = new ThreadSolve(service, jobId, jobClass, args);
+        ThreadSolve TS = new ThreadSolve(service, jobId, jobClass, args, props);
         
         //TS.start();
         return TS;
+    }
+    
+    public static Community initNetwork(InetSocketAddress peer, String scopeName) {
+        ///////////////////// Pastry
+
+        /* Declaration of the main class
+         * all the internal initialization is made on the constructor
+         */
+        CoreORB TDTR = (CoreORB) getORB();
+
+
+        /* Define if connecting to a peer or network discovery
+         * 
+         */
+        CoreQueue queue = getCoreQueue();
+
+        TDTR.setQueue(queue);
+
+        /* Creates a ressource Manager
+         */
+        RessourceManager rm = getRM();
+
+        
+
+        //NetworkAdapterInterface P2P = new EasyPastryDHTAdapter(queue, peer, community);
+        NetworkAdapterInterface P2P = new TomP2PAdapter(queue, peer);
+
+        TDTR.setNetworkAdapter(P2P);
+
+        /* creates a module to plug on the main class
+         * and subscribe it to the messaging system
+         */
+        if (scopeName == null)
+            scopeName = "vlan0";
+        Community community = getCommunity(scopeName, TDTR, rm);
+        
+        TDTR.subscribe(community);
+
+        if (!scopeName.equals("vlan0")) {
+            // also creates a default community for "nameless" jobs
+            Community vlan0 = getCommunity("vlan0", TDTR, rm);
+            TDTR.subscribe(vlan0);
+        }
+        //TDTR.setStorage(new SerializedDiskStorage());
+        TDTR.setStorage((StorageAdapterInterface) P2P);
+
+        System.err.println("starting network");
+
+        return community;
     }
 }

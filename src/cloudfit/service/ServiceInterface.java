@@ -13,6 +13,7 @@
 
 package cloudfit.service;
 
+import cloudfit.core.RessourceManager;
 import java.io.Serializable;
 
 
@@ -32,7 +33,7 @@ public interface ServiceInterface {
      * Get this service ID
      * @return 
      */
-    public long getProcessId();
+    public String getProcessId();
 
     /**
      * Puts a message in the waiting queue, prior to <code>notify(obj)</code>
@@ -72,4 +73,6 @@ public interface ServiceInterface {
      * @param key the key that identifies the data to be stored
      */
     public void remove(String...key); 
+    
+    public RessourceManager getRessourceManager();
 }

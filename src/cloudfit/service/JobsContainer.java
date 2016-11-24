@@ -25,6 +25,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -80,8 +81,9 @@ public class JobsContainer extends Thread implements Serializable {
         if (obj.getJar() == null) { // regular submission without a jar
             ApplicationInterface jobClass = obj.getJobClass();
             String[] jobargs = obj.getArgs();
+            Properties reqs = obj.getReqs();
 
-            JobManagerInterface TS = TheBigFactory.getThreadSolve(comm, jobId, jobClass, jobargs);
+            JobManagerInterface TS = TheBigFactory.getThreadSolve(comm, jobId, jobClass, jobargs, reqs);
             if (obj.getData() != null) {
                 //System.err.println("---->>>>> Accepting "+((CopyOnWriteArrayList<TaskStatus>)obj.getData()).size());
                 TS.setTaskList(obj.getData());
@@ -108,7 +110,9 @@ public class JobsContainer extends Thread implements Serializable {
                     ApplicationInterface jobClass = ctor.newInstance();
 
                     String[] jobargs = obj.getArgs();
-                    JobManagerInterface TS = TheBigFactory.getThreadSolve(comm, jobId, jobClass, jobargs);
+                    Properties reqs = obj.getReqs();
+                    
+                    JobManagerInterface TS = TheBigFactory.getThreadSolve(comm, jobId, jobClass, jobargs, reqs);
                     if (obj.getData() != null) {
                         TS.setTaskList(obj.getData());
 
@@ -148,7 +152,8 @@ public class JobsContainer extends Thread implements Serializable {
                     Thread toto = new Thread(element);
                     toto.start();
                     try {
-                        while (element.getStatus() != element.COMPLETED) {
+                        // wait until completion or just jump out if the requirements don't match
+                        while (element.getStatus() != element.COMPLETED && element.getStatus() != element.NOMATCH) {
                             Thread.sleep(1000);
                         }
                     } catch (InterruptedException ex) {

@@ -15,6 +15,7 @@ package cloudfit.service;
 import cloudfit.application.ApplicationInterface;
 import cloudfit.util.Number160;
 import java.io.Serializable;
+import java.util.Properties;
 
 /**
  * Message to insert a new job
@@ -29,6 +30,8 @@ public class JobMessage implements Serializable {
     private Serializable data = null;
     private String jar = null;
     private boolean delete = false;
+    private String app = null;
+    private Properties reqs = null;
 
     public String getJar() {
         return jar;
@@ -45,8 +48,7 @@ public class JobMessage implements Serializable {
     public void setApp(String app) {
         this.app = app;
     }
-    private String app = null;
-
+    
     /**
      * Constructor of this class.
      *
@@ -54,17 +56,19 @@ public class JobMessage implements Serializable {
      * @param obj the class of the application to run
      * @param args the application arguments
      */
-    public JobMessage(Number160 jobId, ApplicationInterface obj, String[] args) {
+    public JobMessage(Number160 jobId, ApplicationInterface obj, String[] args, Properties reqs) {
         this.njobId = jobId;
         this.args = args;
         this.jobClass = obj;
+        this.reqs = reqs;
     }
 
-    public JobMessage(Number160 jobId, String jar, String app, String[] args) {
+    public JobMessage(Number160 jobId, String jar, String app, String[] args, Properties reqs) {
         this.njobId = jobId;
         this.jar = jar;
         this.app = app;
         this.args = args;
+        this.reqs = reqs;
     }
 
     public JobMessage(Number160 jobId, boolean delete) {
@@ -122,6 +126,10 @@ public class JobMessage implements Serializable {
 
     public void setData(Serializable data) {
         this.data = data;
+    }
+    
+    public Properties getReqs() {
+        return reqs;
     }
 
 }

@@ -14,6 +14,7 @@ package cloudfit.service;
 
 import cloudfit.util.Number160;
 import java.io.Serializable;
+import java.util.Properties;
 
 /**
  * General interface for the JobManager classes (ThreadSolve)
@@ -25,6 +26,7 @@ public interface JobManagerInterface extends Runnable, Serializable {
     public static int NEW = 0;
     public static int STARTED = 1;
     public static int COMPLETED = 2;
+    public static int NOMATCH = 3; // required resources do not match the node, ignore and go to the next job.
     
     public boolean waitFinished() throws InterruptedException;
     
@@ -61,4 +63,5 @@ public interface JobManagerInterface extends Runnable, Serializable {
     public void setOriginalMsg(JobMessage obj);
     
     public JobMessage getOriginalMsg();
+    
 }

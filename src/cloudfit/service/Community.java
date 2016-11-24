@@ -15,8 +15,17 @@ package cloudfit.service;
 import cloudfit.application.ApplicationInterface;
 import cloudfit.core.Message;
 import cloudfit.core.ORBInterface;
+import cloudfit.core.RessourceManager;
+import cloudfit.storage.DHTStorageUnit;
+import cloudfit.storage.FileContainer;
 import cloudfit.util.Number160;
+import java.io.File;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -29,10 +38,11 @@ import java.util.logging.Logger;
  */
 public class Community implements ServiceInterface {
 
-    private long processId = 1;
+    private String communityName = "vlan0"; // a small joke with the network community
     private ActiveBlockingQueue appQueue = null;
     private ORBInterface router = null;
     protected JobsContainer JobsC = null;
+    private RessourceManager rm = null;
 
     /**
      * Constructor of the class
@@ -41,15 +51,23 @@ public class Community implements ServiceInterface {
      * message to the right service
      * @param na a reference to the ORB
      */
-    public Community(long pid, ORBInterface na) {
-        this.processId = pid;
-        this.appQueue = new ActiveBlockingQueue(this.processId, this);
+    public Community(String pid, ORBInterface na, RessourceManager rm) {
+        this.communityName = pid;
+        this.appQueue = new ActiveBlockingQueue(this.communityName, this);
+        this.rm = rm;
         this.appQueue.start();
         this.router = na;
         this.JobsC = new JobsContainer();
         JobsC.start();
+        System.out.println("Community "+ communityName + " started !");
     }
-
+    
+    
+    public RessourceManager getRessourceManager ()
+    {
+        return rm;
+    }
+    
     /**
      * Method used to submit a job
      *
@@ -59,9 +77,21 @@ public class Community implements ServiceInterface {
      */
     public Number160 plug(String jar, String app, String[] args) {
 
+        return plug(jar, app, args, null);
+    }
+    
+    /**
+     * Method used to submit a job
+     *
+     * @param app the class of the application to run on the submitted job
+     * @param args the application parameters
+     * @return the id of the submission
+     */
+    public Number160 plug(String jar, String app, String[] args, Properties reqs) {
+
         JobMessage jm;
 
-        jm = new JobMessage(null, jar, app, args);
+        jm = new JobMessage(null, jar, app, args, reqs);
 
         return this.plug(jm);
     }
@@ -75,10 +105,22 @@ public class Community implements ServiceInterface {
      */
     public Number160 plug(ApplicationInterface app, String[] args) {
 
+        return plug(app, args, null);
+    }
+    
+    /**
+     * Method used to submit a job
+     *
+     * @param app the class of the application to run on the submitted job
+     * @param args the application parameters
+     * @return the id of the submission
+     */
+    public Number160 plug(ApplicationInterface app, String[] args, Properties reqs) {
+
         //++jobId;
         JobMessage jm;
 
-        jm = new JobMessage(null, app, args);
+        jm = new JobMessage(null, app, args, reqs);
 
         return this.plug(jm);
     }
@@ -95,7 +137,7 @@ public class Community implements ServiceInterface {
         Number160 njob = new Number160(time);
         // sets a jobId as the submit interface does not knows the current one
         jm.setJobId(njob);
-        //router.sendAll(new Message(processId, jm), true);
+        //router.sendAll(new Message(communityName, jm), true);
         this.sendAll(jm, true);
         return njob;
     }
@@ -140,7 +182,7 @@ public class Community implements ServiceInterface {
     public void removeJob(Number160 jobid) {
         JobMessage jmdelete = new JobMessage(jobid, true);
         this.sendAll(jmdelete, true);
-        //router.sendAll(new Message(processId, jmdelete), true);
+        //router.sendAll(new Message(communityName, jmdelete), true);
 
     }
 
@@ -151,8 +193,8 @@ public class Community implements ServiceInterface {
      * @return
      */
     @Override
-    public long getProcessId() {
-        return processId;
+    public String getProcessId() {
+        return communityName;
     }
 
     /**
@@ -255,7 +297,7 @@ public class Community implements ServiceInterface {
      */
     @Override
     public void send(Serializable msg) {
-        router.sendNext(new Message(new Long(processId), msg));
+        router.sendNext(new Message(communityName, msg));
     }
 
     /**
@@ -266,7 +308,7 @@ public class Community implements ServiceInterface {
     @Override
     public void sendAll(Serializable msg, boolean metoo) {
         //System.err.println("Sending"+msg.getClass());
-        router.sendAll(new Message(processId, msg), metoo);
+        router.sendAll(new Message(communityName, msg), metoo);
     }
 
     // Storage methods
@@ -358,5 +400,78 @@ public class Community implements ServiceInterface {
     public JobsContainer getCurrentState() {
         return JobsC;
     }
+    
+    public ArrayList<String> saveSrc(String src) {
+        ArrayList<String> plainfiles = new ArrayList();
+        List<String> files = loadInput(src);
+
+                System.err.println(files);
+                System.err.println(files.size());
+
+                Iterator it = files.iterator();
+                int number = 0;
+                while (it.hasNext()) {
+                    String file = (String) it.next();
+                    long init = System.currentTimeMillis();
+                    FileContainer fc = new FileContainer(file);
+                    DHTStorageUnit dsu = new DHTStorageUnit(null, -1, (Serializable) fc);
+
+                    //((StorageAdapterInterface)P2P).blocking_save("input.data" + number, dsu, false);
+                    this.save(dsu, fc.getName());
+
+                    //save("input.data" + number, fc, false, number); 
+                    // number++;
+                    long fin = System.currentTimeMillis();
+
+                    if (!fc.getName().endsWith(".jar")) {
+                        plainfiles.add(fc.getName());
+                        //toto.add(fc.getName());
+                    }
+                    System.err.println(fc.getName() + " (" + number + ") saved in " + (fin - init) + " ms");
+
+                }
+         return plainfiles;
+    }
+    
+        /**
+     * looks for input files on the arguments. If argument is a directory, it
+     * includes all files inside, recursively.
+     */
+    
+    private static List<String> filenames = new java.util.concurrent.CopyOnWriteArrayList<String>();
+    
+    
+    private static List<String> loadInput(String dir) {
+        if (filenames.isEmpty()) {
+            File target = new File(dir);
+
+            if (target.isDirectory()) {
+                addDirectoryFiles(target);
+            } else { // target is a file
+                filenames.add(target.getPath());
+            }
+        }
+        Collections.sort(filenames);
+
+        return filenames;
+    }
+
+    private static boolean addDirectoryFiles(File target) {
+
+        if (!target.isDirectory()) {
+            filenames.add(target.getPath());
+            return false;
+        }
+
+        File[] listOfFiles = target.listFiles();
+
+        if (listOfFiles != null) {
+            for (File file : listOfFiles) {
+                addDirectoryFiles(file);
+            }
+        }
+        return true;
+    }
+
 
 }
