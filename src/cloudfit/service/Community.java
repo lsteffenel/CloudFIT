@@ -451,9 +451,12 @@ public class Community implements ServiceInterface {
                 filenames.add(target.getPath());
             }
         }
-        Collections.sort(filenames);
-
-        return filenames;
+        
+        // creates a modifiable list to avoid bug on Java 7 (on Java 8 it works)
+        List<String> modifiableList = new ArrayList<String>(filenames);
+        Collections.sort(modifiableList);
+        
+        return modifiableList;
     }
 
     private static boolean addDirectoryFiles(File target) {

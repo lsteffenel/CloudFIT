@@ -138,12 +138,17 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
                 //System.err.println(iface.getHardwareAddress() + " " + iface.getInetAddresses().nextElement().getHostAddress() + " ");
                 //String sid =   iface.getHardwareAddress().toString() + " ";
                 byte[] mac = iface.getHardwareAddress();
-                StringBuilder sb = new StringBuilder();
-                for (int i = 0; i < mac.length; i++) {
-                    sb.append(String.format("%02X%s", mac[i], (i < mac.length - 1) ? "-" : ""));
+                if (mac != null) {
+                    StringBuilder sb = new StringBuilder();
+                    for (int i = 0; i < mac.length; i++) {
+                        sb.append(String.format("%02X%s", mac[i], (i < mac.length - 1) ? "-" : ""));
+                    }
+                    //System.err.println(iface.getDisplayName() + " " + sb.toString() );
+                    sid = sb.toString() + " " + iface.getInetAddresses().nextElement().getHostAddress() + " " + port;
+                } else {
+                    sid = "noiface 00:00:00:00:00:00 " + port;
+
                 }
-                //System.err.println(iface.getDisplayName() + " " + sb.toString() );
-                sid = sb.toString() + " " + iface.getInetAddresses().nextElement().getHostAddress() + " " + port;
 
             } else {
                 sid = "noiface 00:00:00:00:00:00 " + port;
@@ -577,6 +582,7 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
                 default:
                     peer.put(Number160.createHash(keys[0])).domainKey(Number160.createHash(keys[1])).versionKey(Number160.createHash(keys[2])).data(new Data(value)).start();
                     break;
+
             }
             //peer.put(Number160.createHash(key)).data(new Data(value)).start();
             //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
@@ -906,6 +912,7 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
             } catch (ClassNotFoundException ex) {
                 Logger.getLogger(TomP2PAdapter.class
                         .getName()).log(Level.SEVERE, null, ex);
+
             } catch (IOException ex) {
                 Logger.getLogger(TomP2PAdapter.class
                         .getName()).log(Level.SEVERE, null, ex);
