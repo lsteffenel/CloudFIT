@@ -561,4 +561,9 @@ public class EasyPastryDHTAdapter implements NetworkAdapterInterface, StorageAda
 //                    .getName()).log(Level.SEVERE, null, ex);
 //        }
     }
+
+    @Override
+    public boolean contains(String... keys) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
 }

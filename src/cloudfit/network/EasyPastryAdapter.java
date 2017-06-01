@@ -302,4 +302,9 @@ public class EasyPastryAdapter implements NetworkAdapterInterface, StorageAdapte
                     .getName()).log(Level.SEVERE, null, ex);
         }
     }
+
+    @Override
+    public boolean contains(String... keys) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
 }

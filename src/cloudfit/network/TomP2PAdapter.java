@@ -40,6 +40,7 @@ import net.tomp2p.dht.PeerBuilderDHT;
 import net.tomp2p.dht.PeerDHT;
 import net.tomp2p.dht.PutBuilder;
 import net.tomp2p.dht.RemoveBuilder;
+import net.tomp2p.dht.StorageLayer;
 import net.tomp2p.futures.FutureBootstrap;
 import net.tomp2p.futures.FutureDirect;
 import net.tomp2p.futures.FutureDiscover;
@@ -784,6 +785,44 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
 //        }
 //    }
 
+    @Override
+    public boolean contains(String... keys) {
+        StorageLayer sl = peer.storageLayer();
+        Number160 location = Number160.ZERO;
+        Number160 domain = Number160.ZERO;
+        Number160 content = Number160.ZERO;
+        Number160 version = Number160.ZERO;
+        
+        if (keys == null) {
+            return sl.contains(Number640.ZERO);
+        } else {
+            switch (keys.length) {
+                case 1:
+                    location = Number160.createHash(keys[0]);
+                    content = location;
+                    break;
+                case 2:
+                    location = Number160.createHash(keys[0]);
+                    domain = Number160.createHash(keys[1]);
+                    content = location;
+                    break;
+                case 3:
+                    location = Number160.createHash(keys[0]);
+                    domain = Number160.createHash(keys[1]);
+                    content = Number160.createHash(keys[2]);
+                    break;
+                default:
+                    location = Number160.createHash(keys[0]);
+                    domain = Number160.createHash(keys[1]);
+                    content = Number160.createHash(keys[2]);
+                    version = Number160.createHash(keys[3]);
+            }
+        }
+        
+        Number640 query = new Number640(location, domain, content, version);
+        return sl.contains(query);
+    }
+    
     @Override
     public Serializable read(String... keys) {
 

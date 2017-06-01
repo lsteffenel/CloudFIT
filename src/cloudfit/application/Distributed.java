@@ -14,7 +14,6 @@ package cloudfit.application;
 
 import cloudfit.service.JobManagerInterface;
 import cloudfit.storage.DHTStorageUnit;
-import cloudfit.util.Number160;
 import java.io.Serializable;
 import java.util.ArrayList;
 

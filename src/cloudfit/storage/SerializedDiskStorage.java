@@ -110,4 +110,9 @@ public class SerializedDiskStorage implements StorageAdapterInterface {
             System.err.println("Delete operation is failed.");
         }
     }
+
+    @Override
+    public boolean contains(String... keys) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
 }

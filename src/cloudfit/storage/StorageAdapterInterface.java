@@ -25,6 +25,8 @@ public interface StorageAdapterInterface {
 
     public void blocking_save(Serializable value, String...keys);
     
+    public boolean contains(String... keys);
+    
     public Serializable read(String...keys);
 
     public void remove(String...keys);
