@@ -12,44 +12,22 @@
  */
 package org.permare.context;
 
+import java.io.Serializable;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 
-public abstract class AbstractOSCollector implements Collector {
+public abstract class AbstractOSCollector<T> extends AbstractCollector<T>  {
 
     private String name;
     private String description;
     private OperatingSystemMXBean bean = ManagementFactory.getOperatingSystemMXBean();
 
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-    
-    public String getCollectorName() {
-        return this.name;
-    }
-    
-    public String getCollectorDescription() {
-        return this.description;
-    }
-
-    public OperatingSystemMXBean getBean() {
+        public OperatingSystemMXBean getBean() {
         return this.bean;
     }
 
     public void setBean(OperatingSystemMXBean bean) {
         this.bean = bean;
     }
+    
 }

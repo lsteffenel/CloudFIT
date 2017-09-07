@@ -51,7 +51,7 @@ public class ThreadSolve implements JobManagerInterface {
     private RessourceManager RM = null;
     private Properties reqRessources = null;
 
-    public ThreadSolve(ServiceInterface service, Number160 jobId, ApplicationInterface jobClass, String[] args, Properties reqRessources) {
+    public ThreadSolve(ServiceInterface service, Number160 jobId, ApplicationInterface jobClass, String[] args, Properties requirements) {
         try {
             fh = new FileHandler("TestLogging.log", true);
             //fh.setFormatter(new SimpleFormatter());
@@ -69,7 +69,7 @@ public class ThreadSolve implements JobManagerInterface {
 
         this.jobClass = jobClass;
 
-        this.reqRessources = reqRessources;
+        this.reqRessources = requirements;
 
         this.setStatus(NEW);
 
@@ -103,7 +103,7 @@ public class ThreadSolve implements JobManagerInterface {
             do {
                 nbWorkers = RM.howManyCores();
                 if (nbWorkers == 0) {
-                    nbWorkers = 1;
+                    nbWorkers = 1; // try 1 even if there is none available, will only get when available
                 }
 
                 // adapt the number of the workers to the size of the job

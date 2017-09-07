@@ -12,6 +12,7 @@
  */
 package org.permare.context;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -32,7 +33,7 @@ public class CPUAverageLoadCollector extends AbstractOSCollector {
     private int nbObs;
 
     public CPUAverageLoadCollector() {
-        super.setName("CPULoad");
+        super.setName("CPU_Load_Avg");
         super.setDescription("Average System load accros multiple observations");
         this.interval = DEFAULT_NB_OBSERVATIONS;
         this.nbObs = DEFAULT_INTERVAL;
@@ -91,5 +92,20 @@ public class CPUAverageLoadCollector extends AbstractOSCollector {
         }
 
         return new Double(moy);
+    }
+    
+    
+    @Override
+    public boolean checkValue(Serializable value) {
+        List<Double> loads = this.collect();
+        // use only the last reading
+        Double load = loads.get(loads.size()-1); 
+        if ((Double)value <= load) {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
 }

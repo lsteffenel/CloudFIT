@@ -7,15 +7,11 @@ package cloudfit.core;
 
 import cloudfit.util.PropertiesUtil;
 import static java.lang.Math.min;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Properties;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-import org.permare.context.AvailableDiskSpaceCollector;
-import org.permare.context.Collector;
-import org.permare.context.FreeMemoryCollector;
-import org.permare.context.PhysicalMemoryCollector;
+import org.permare.context.*;
  
 /**
  *
@@ -25,7 +21,7 @@ public class RessourceManager {
 
     int nbWorkers = 1;
     private final Semaphore available;
-    private List<Collector<Double>> collectors = new ArrayList<>();
+    private HashMap<String,Collector<Double>> collectors = new HashMap<>();
     
 
     public RessourceManager() {
@@ -37,6 +33,8 @@ public class RessourceManager {
             nbWorkers = min(Integer.parseInt(prop), nbWorkers);
         }
         available = new Semaphore(nbWorkers, true);
+        
+        setCollectors();
     }
 
     public int howManyCores() {
@@ -66,6 +64,7 @@ public class RessourceManager {
 
     public boolean checkRequirements(Properties reqRessources) {
         if (reqRessources == null) {
+            System.out.println("no requirements to evaluate");
             return true;
         }
         ReqEvaluator eval = new ReqEvaluator(collectors);
@@ -73,24 +72,30 @@ public class RessourceManager {
     }
     
     public void addCollector(Collector c) {
-        this.collectors.add(c);
+        this.collectors.put(c.getCollectorName(),c);
     }
     
     public void removeCollector(Collector c) {
-        this.collectors.remove(c);
+        this.collectors.remove(c.getCollectorName());
     } 
     
-    public List<Collector<Double>> getCollectors() {
-        return this.collectors;
-    }
+    //public List<Collector<Double>> getCollectors() {
+    //    return this.collectors;
+    //}
     
     public void setCollectors() {
-        //this.addCollector(new CPULoadCollector());
-        //this.addCollector(new CPUAverageLoadCollector());
-        this.addCollector(new FreeMemoryCollector());
-        this.addCollector(new PhysicalMemoryCollector());
-        //this.addCollector(new TotalProcessorsCollector());
+        
+        this.addCollector(new CPUSystemLoad());
+        this.addCollector(new CPUSystemLoadAverage());
         this.addCollector(new AvailableDiskSpaceCollector());
+        //this.addCollector(new UnallocatedDiskSpaceCollector());
+        this.addCollector(new FreePhysicalMemoryCollector());
+        this.addCollector(new TotalPhysicalMemoryCollector());
+        this.addCollector(new FreeSwapMemoryCollector());
+        this.addCollector(new TotalSwapMemoryCollector());
+        this.addCollector(new FreeVMMemoryCollector());
+        this.addCollector(new TotalVMMemoryCollector());
+        this.addCollector(new TotalProcessorsCollector());
         
     }
 

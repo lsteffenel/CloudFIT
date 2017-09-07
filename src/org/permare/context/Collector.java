@@ -12,10 +12,12 @@
  */
 package org.permare.context;
 
+import java.io.Serializable;
 import java.util.List;
 
 public interface Collector<T> {
 	public List<T> collect();
         public String getCollectorName();
         public String getCollectorDescription();
+        public boolean checkValue(Serializable value);
 }

@@ -28,11 +28,9 @@ import org.apache.commons.cli.PosixParser;
  * @author Luiz Angelo STEFFENEL <Luiz-Angelo.Steffenel@univ-reims.fr>
  */
 public class DHT {
-    
+
     private static List<String> filenames = new java.util.concurrent.CopyOnWriteArrayList<String>();
-    
-    
-    
+
     public static void main(String[] args) {
         long start;
         long end;
@@ -48,12 +46,16 @@ public class DHT {
                 .hasArg()
                 .withDescription("get data from the DHT")
                 .create("get");
+        Option contains = OptionBuilder.withArgName("contains")
+                .hasArg()
+                .withDescription("has data on its local disk?")
+                .create("contains");
         //destDir.setRequired(true);
         Option delete = OptionBuilder.withArgName("delete")
                 .hasArg()
                 .withDescription("delete file from the DHT")
                 .create("delete");
-        
+
         Option node = OptionBuilder.withArgName("node")
                 .hasArg()
                 .withDescription("Optional address to join the P2P network")
@@ -62,9 +64,10 @@ public class DHT {
                 .hasArg()
                 .withDescription("Optional port to join the P2P network")
                 .create("port");
- 
+
         options.addOption(put);
         options.addOption(get);
+        options.addOption(contains);
         options.addOption(delete);
         options.addOption(node);
         options.addOption(port);
@@ -81,7 +84,7 @@ public class DHT {
             usage(options);
             return;
         }
-        
+
         InetSocketAddress peer = null; // the defaut value = discovery
 
         if (line.hasOption("node")) {
@@ -92,11 +95,10 @@ public class DHT {
             }
 
         } else {
-                peer = new InetSocketAddress(InetAddress.getLoopbackAddress(), 7777);       
+            peer = new InetSocketAddress(InetAddress.getLoopbackAddress(), 7777);
         }
-        
+
         //////////////////////////////////////////////////
-        
 //        
 //        ///////////////////// Pastry
 //
@@ -129,78 +131,93 @@ public class DHT {
 //        //TDTR.setStorage(new SerializedDiskStorage());
 //        TDTR.setStorage((StorageAdapterInterface) P2P);
 //        
-        
         NetworkAdapterInterface P2P = new TomP2PAdapter(null, peer);
-        
+
         start = System.currentTimeMillis();
 
         /////////////////////////////////////////////////
-        
         // OPTION PARSING
         // is there a "node" and "port" option ?
-        
         if (line.hasOption("put")) {
-            
+
             List<String> files = loadInput(line.getOptionValue("put"));
-        
-        System.err.println(files);
-        System.err.println(files.size());
-        
-        
-        
-        Iterator it = files.iterator();
-        int number = 0;
-        while (it.hasNext()) {
-            String file = (String)it.next();
-            long init = System.currentTimeMillis();
-            FileContainer fc = new FileContainer(file);
-            DHTStorageUnit dsu = new DHTStorageUnit(null, -1, (Serializable)fc);
-            
-            ((StorageAdapterInterface)P2P).blocking_save(dsu,"input.data" + number);
-            //save("input.data" + number, fc, false, number); 
-            number++;
-            long fin = System.currentTimeMillis();
-            System.err.println(file+" ("+number+") saved in "+ (fin-init) + " ms");
-            
-            //System.gc();
-            
+
+            System.err.println(files);
+            System.err.println(files.size());
+
+            Iterator it = files.iterator();
+            int number = 0;
+            while (it.hasNext()) {
+                String file = (String) it.next();
+                long init = System.currentTimeMillis();
+                FileContainer fc = new FileContainer(file);
+                DHTStorageUnit dsu = new DHTStorageUnit(null, -1, (Serializable) fc);
+
+                ((StorageAdapterInterface) P2P).blocking_save(dsu, file);
+                //save("input.data" + number, fc, false, number); 
+                number++;
+                long fin = System.currentTimeMillis();
+                System.err.println(file + " (" + number + ") saved in " + (fin - init) + " ms");
+
+                //System.gc();
+            }
+            System.gc();
+
         }
-        System.gc();
-        
-        }
-        
+
         if (line.hasOption("get")) {
-           // repetitions = Integer.parseInt(line.getOptionValue("repeat"));
-            ((StorageAdapterInterface)P2P).read(null);
+            List<String> files = loadInput(line.getOptionValue("get"));
+            System.err.println(files);
+            System.err.println(files.size());
+
+            Iterator it = files.iterator();
+            int number = 0;
+            while (it.hasNext()) {
+                String file = (String) it.next();
+                boolean has = ((StorageAdapterInterface) P2P).contains(file);
+                String present = has?"":"not";
+                System.out.println("File "+ file + " is "+present+" local:");
+                Serializable data = ((StorageAdapterInterface) P2P).read(file);
+                System.out.println("got file "+data);
+            }
+            
 
         }
-        
+
+        if (line.hasOption("contains")) {
+            List<String> files = loadInput(line.getOptionValue("contains"));
+            System.err.println(files);
+            System.err.println(files.size());
+
+            Iterator it = files.iterator();
+            int number = 0;
+            while (it.hasNext()) {
+                String file = (String) it.next();
+                boolean has = ((StorageAdapterInterface) P2P).contains(file);
+                String present = has?"":"not";
+                System.out.println("File "+ file + " is "+present+" local:");
+            }
+        }
+
         if (line.hasOption("delete")) {
-           // rargs[0] = line.getOptionValue("nreducers");
-            ((StorageAdapterInterface)P2P).remove(null);
+            // rargs[0] = line.getOptionValue("nreducers");
+            ((StorageAdapterInterface) P2P).remove(null);
         }
 
-        
-        
-            //job.setReducer("Reducer");
-                //for (int i=0; i<repetitions; i++) {
-                
-        
-                end = System.currentTimeMillis();
+        //job.setReducer("Reducer");
+        //for (int i=0; i<repetitions; i++) {
+        end = System.currentTimeMillis();
 
 //                Thread.sleep(3000);
+        System.err.println("Total time = " + (end - start));
 
-                System.err.println("Total time = " + (end - start));
+        System.err.println("Total time = " + (end - start));
 
-                System.err.println("Total time = " + (end - start));
+        Scanner sc = new Scanner(System.in);
+        String i = sc.next();
+        //}
 
-                
-                Scanner sc = new Scanner(System.in);
-                String i = sc.next();
-                //}
-                
-                System.exit(0);
-                
+        System.exit(0);
 
     }
 
@@ -211,18 +228,16 @@ public class DHT {
         formatter.printHelp("MRLauncher", options);
 
     }
-    
-    
+
     private NetworkAdapterInterface initNetwork(InetSocketAddress peer) {
-        
-        
+
         NetworkAdapterInterface P2P = new TomP2PAdapter(null, peer);
         System.err.println("starting network");
-        
-        return P2P;          
+
+        return P2P;
 
     }
-    
+
     /**
      * looks for input files on the arguments. If argument is a directory, it
      * includes all files inside, recursively.
@@ -256,5 +271,5 @@ public class DHT {
         }
         return true;
     }
-    
+
 }

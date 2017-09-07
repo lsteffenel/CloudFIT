@@ -50,29 +50,39 @@ public interface ServiceInterface {
     /**
      * Method to send a broadcast message via the protocol level
      * @param msg 
+     * @param metoo 
      */
     public void sendAll (Serializable msg, boolean metoo);
     
     /**
      * Method to write a data entry on the storage
-     * @param key
+     * @param keys
      * @param value
      */
     public void save(Serializable value, String...keys);
     
     /**
      * Method to read a data from the storage
-     * @param key
+     * @param keys
      * @return the data corresponding to the key
      */
-    public Serializable read(String...key) ;
+    public Serializable read(String...keys) ;
+    
+    /**
+     * Method to check if a data is on local storage
+     * @param keys
+     * @return boolean (True if local)
+     */
+    public boolean contains(String...keys) ;
     
     /**
      * Removes the value under the key identification from the storage
      *
-     * @param key the key that identifies the data to be stored
+     * @param keys the key that identifies the data to be stored
      */
-    public void remove(String...key); 
+    public void remove(String...keys); 
     
     public RessourceManager getRessourceManager();
+    
+    public String getPeerID();
 }

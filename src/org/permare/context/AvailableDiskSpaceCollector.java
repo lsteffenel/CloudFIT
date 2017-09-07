@@ -13,25 +13,36 @@
 package org.permare.context;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.nio.file.FileStore;
 import java.util.ArrayList;
 import java.util.List;
 import java.nio.file.FileSystems;
+import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * discovers the available disk space on the file systems
+ *
  * @author kirsch
  */
-public class AvailableDiskSpaceCollector implements Collector<FileStoreStruct> {
+public class AvailableDiskSpaceCollector extends AbstractOSCollector<FileStoreStruct> {
 
+    public static String COLLECTOR_NAME = "Thing.Device.Storage.Available";
+    public static String COLLECTOR_DESCR = "Available disk space.";
+
+    public AvailableDiskSpaceCollector() {
+        super.setName(COLLECTOR_NAME);
+        super.setDescription(COLLECTOR_DESCR);
+    }
+    
     @Override
     public List collect() {
-        int availFS = 0;        
+        int availFS = 0;
         List<FileStoreStruct> results = new ArrayList<>();
-        
-        for (FileStore fs: FileSystems.getDefault().getFileStores()) {
+
+        for (FileStore fs : FileSystems.getDefault().getFileStores()) {
             availFS++;
             try {
                 FileStoreStruct fss = new FileStoreStruct();
@@ -44,25 +55,30 @@ public class AvailableDiskSpaceCollector implements Collector<FileStoreStruct> {
                 //results.add(new Double(fs.getUsableSpace() / 1024));
                 results.add(fss);
             } catch (IOException ex) {
-                Logger.getLogger(AvailableDiskSpaceCollector.class.getName()).log(Level.WARNING, 
+                Logger.getLogger(AvailableDiskSpaceCollector.class.getName()).log(Level.WARNING,
                         "Disk space information is unavailable", ex);
-            }            
+            }
         }
-        
+
         //results.add(new Double(availFS));
-        
         return results;
     }
 
-    @Override
-    public String getCollectorName() {
-        return "Available Storage";
-    }
 
     @Override
-    public String getCollectorDescription() {
-        return "Available disk space (unallocated and usable) on the file systems and total nb of FS";
+    public boolean checkValue(Serializable value) {
+        List<FileStoreStruct> disks = this.collect();
+        // checks free space in each available disk. If one has space, says ok
+        boolean hasSpace = false;
+        Iterator it = disks.iterator();
+        while (it.hasNext()) {
+            FileStoreStruct disk = (FileStoreStruct) it.next();
+            Double space = disk.freeSpace;
+            if ((Double) value <= space) {
+                hasSpace = true;
+            }
+        }
+        return hasSpace;
     }
-    
-    
+
 }

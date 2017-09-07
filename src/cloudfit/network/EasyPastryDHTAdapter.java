@@ -566,4 +566,9 @@ public class EasyPastryDHTAdapter implements NetworkAdapterInterface, StorageAda
     public boolean contains(String... keys) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
+
+    @Override
+    public String getPeerID() {
+        return conn.getNode().getId().toStringFull();
+    }
 }

@@ -5,10 +5,11 @@
  */
 package cloudfit.core;
 
-import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Properties;
+import java.util.Set;
 import org.permare.context.Collector;
 
 /**
@@ -17,19 +18,28 @@ import org.permare.context.Collector;
  */
 class ReqEvaluator {
 
-    private List<Collector<Double>> collectors = new ArrayList<>();
+    private HashMap<String,Collector<Double>> collectors = new HashMap<>();
     
-    public ReqEvaluator(List<Collector<Double>> cols) {
+    public ReqEvaluator(HashMap<String,Collector<Double>> cols) {
         this.collectors = cols;
     }
     
     public boolean checkRequirements (Properties reqRessources) {
+        boolean checkPassed = true;
         Enumeration props = reqRessources.propertyNames();
         while (props.hasMoreElements())
         {
             String key = (String) props.nextElement();
-            System.out.println(key + " = " + reqRessources.getProperty(key));
+            
+            if (collectors.containsKey(key))
+            {
+                Double value = Double.valueOf(reqRessources.getProperty(key));
+                boolean test = collectors.get(key).checkValue(value);
+                System.out.println(key + " = " + reqRessources.getProperty(key) + " ("+test+")");
+                if (test == false) checkPassed = false;
+            }
+            
         }
-        return true;
+        return checkPassed;
     }
 }

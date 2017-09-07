@@ -43,5 +43,7 @@ public interface NetworkAdapterInterface {
      * @param msg the message
      */
     public void sendAll(Message msg, boolean metoo);
+    
+    public String getPeerID();
 
 }

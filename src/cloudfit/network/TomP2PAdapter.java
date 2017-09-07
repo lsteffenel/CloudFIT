@@ -46,10 +46,13 @@ import net.tomp2p.futures.FutureDirect;
 import net.tomp2p.futures.FutureDiscover;
 import net.tomp2p.p2p.PeerBuilder;
 import net.tomp2p.p2p.PostRoutingFilter;
+import net.tomp2p.p2p.RequestP2PConfiguration;
 import net.tomp2p.p2p.SlowPeerFilter;
 import net.tomp2p.peers.Number160;
 import net.tomp2p.peers.Number640;
 import net.tomp2p.peers.PeerAddress;
+import net.tomp2p.replication.IndirectReplication;
+import net.tomp2p.replication.SlowReplicationFilter;
 import net.tomp2p.rpc.ObjectDataReply;
 import net.tomp2p.storage.Data;
 import net.tomp2p.storage.StorageDisk;
@@ -79,6 +82,12 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
 
     public Number160 getId() {
         return peer.peerID();
+    }
+    
+    @Override
+    public String getPeerID() 
+    {
+        return peer.peerID().toString(true);
     }
 
 //    public TomP2PAdapter(CoreQueue queue, InetSocketAddress add, Community comm) {
@@ -155,6 +164,8 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
                 sid = "noiface 00:00:00:00:00:00 " + port;
 
             }
+            // Here we define our unique NumberID. If there is a way to "control" this to make it location-aware...
+            // #TODO
             Number160 id = Number160.createHash(sid);
             System.err.println(sid + "\n" + id);
 
@@ -174,9 +185,12 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
             Bindings b = new Bindings().listenAny();
 
             PeerBuilderDHT pbd = new PeerBuilderDHT(new PeerBuilder(id).ports(port).bindings(b).start());
-
+            
+            
             String storageType = PropertiesUtil.getProperty("storage_method");
+            storageType = "disk";
             if (storageType != null) {
+
                 if (storageType.equals("disk")) {
 
                     File storagePath = new File(path);
@@ -185,35 +199,36 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
                         //System.err.println("creating dir");
                         storagePath.mkdirs();
                     }
-                    //System.err.println("Exists or not ? "+ storagePath.exists());
-
-                    //DBase = DBMaker.newFileDB(new File(storagePath,"tomp2p")).transactionDisable().cacheDisable().closeOnJvmShutdown().make();
-                    //DBase = DBMaker.newFileDB(new File(storagePath,"tomp2p")).transactionDisable().closeOnJvmShutdown().make();
-                    //DBase = DBMaker.newFileDB(new File(storagePath,"tomp2p")).transactionDisable().cacheSoftRefEnable().closeOnJvmShutdown().sizeLimit(1024*1024*1024*1024).make();
-                    //DBase = DBMaker.newFileDB(new File(storagePath,"tomp2p")).transactionDisable().cacheSoftRefEnable().closeOnJvmShutdown().make();
                     File base = new File(storagePath, "tomp2p_" + id);
-                    //DBase = DBMaker.newFileDB(base).transactionDisable().asyncWriteEnable().cacheSoftRefEnable().closeOnJvmShutdown().make();
-                    //DBase = DBMaker.newFileDB(base).cacheDisable().closeOnJvmShutdown().make();
+                    //DBase = DBMaker.newFileDB(base).transactionDisable().cacheSoftRefEnable().closeOnJvmShutdown().make();
+                    //DBase = DBMaker.newFileDB(base).transactionDisable().cacheSoftRefEnable().make();
+                    //DBase = DBMaker.newFileDB(base).cacheSoftRefEnable().make();
+                    DBase = DBMaker.newFileDB(base).mmapFileEnableIfSupported().cacheSoftRefEnable().make();
+                    //DBase = DBMaker.newFileDB(base).transactionDisable().cacheSoftRefEnable().compressionEnable().make();
+                    
 
-                    //DBase = DBMaker.newFileDB(base).mmapFileEnableIfSupported().asyncWriteEnable().cacheSoftRefEnable().transactionDisable().closeOnJvmShutdown().make();
-                    DBase = DBMaker.newFileDB(base).transactionDisable().cacheSoftRefEnable().closeOnJvmShutdown().make();
-                    //StorageDisk sd = new StorageDisk(DBase, id, storagePath, new DSASignatureFactory(), 60 * 1000);
 
-                    StorageDisk sd = new StorageDisk(DBase, id, storagePath, new DSASignatureFactory(), 10 * 1000);
+                    StorageDisk sd = new StorageDisk(DBase, id, storagePath, new DSASignatureFactory(), 1 * 1000);
+
+                    //StorageDisk sd = new StorageDisk(DBase, id, storagePath, new DSASignatureFactory(), 10 * 1000);
 
                     pbd.storage(sd);
                 }
             } else {
+                // TODO
                 //Memory storage
+                // this is the default method when pbd.storage = null
 
             }
             // node start
 
             peer = pbd.start();
+            
+            
 
             String slow = PropertiesUtil.getProperty("slow");
             spf = new SlowPeerFilter();
-
+            //slow="true";
             if (slow != null) {
                 if (slow.equals("true")) {
 
@@ -222,7 +237,19 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
                     peer.peer().peerBean().serverPeerAddress(pa);
 
                 }
-            }
+            }     
+            
+            // Explicit indirect replication
+            System.err.println("Activating Indirect Replication");
+            IndirectReplication IR = new IndirectReplication(peer);
+            IR.addReplicationFilter(new SlowReplicationFilter());
+            // Option : choose between a fixed replication factor or autoreplication
+            // DEFAULT = replicationFactor(6)
+            IR.replicationFactor(2);
+            //IR.autoReplication();
+            IR.start();
+            
+            
             //System.err.println("Slow = " + peer.peerAddress().isSlow());
 
             if (add != null) { // one cannot bootstrap to itself !!!
@@ -253,7 +280,7 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
                 }
 
                 System.err.println("wait for maintenace ping");
-                Thread.sleep(5000);
+                Thread.sleep(3000);
                 System.err.println("peer knows: " + peer.peerBean().peerMap().all() + " unverified: "
                         + peer.peerBean().peerMap().allOverflow());
 
@@ -310,6 +337,23 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
 //
 //                    }
 //                }
+            });
+            
+            
+            
+            // Added hook for graceful shutdown
+            
+            Runtime.getRuntime().addShutdownHook(new Thread() {
+                public void run() {
+                    System.err.println("Shutting down peer");
+                    DBase.commit();
+                    //DBase.getEngine().compact();
+                    DBase.commit();
+                    //DBase.getEngine().clearCache();
+                    DBase.close();
+                    peer.shutdown();
+                    System.err.println("Bye!");
+                }
             });
 
 //    
@@ -370,7 +414,7 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
                     //System.err.println(socket.socket().getLocalPort());
 
                     // try to connect to *somewhere*
-                    socket.connect(new InetSocketAddress("www.univ-reims.fr", 80));
+                    socket.connect(new InetSocketAddress("www.google.fr", 80));
                 } catch (IOException ex) {
                     //ex.printStackTrace();
                     continue;
@@ -607,9 +651,12 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
             Number160 domain = Number160.ZERO;
             Number160 content = Number160.ZERO;
             Number160 version = Number160.ZERO;
+            
+            RequestP2PConfiguration rp = new RequestP2PConfiguration(1, 0, 0);
+            
             if (keys == null) {
 
-                pb = peer.put(location).data(content, dt);
+                pb = peer.put(location).requestP2PConfiguration(rp).data(content, dt);
 
             } else {
 
@@ -620,7 +667,7 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
                             location = Number160.createHash(keys[0]);
                         }
                         content = location;
-                        pb = peer.put(location).data(content, dt);
+                        pb = peer.put(location).requestP2PConfiguration(rp).data(content, dt);
                         //System.out.println(keys[0]+" "+location + " " + content);
 
                         //pb = peer.put(Number160.createHash(keys[0])).domainKey(Number160.ZERO).versionKey(Number160.ZERO).data(dt);
@@ -633,7 +680,7 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
                             domain = Number160.createHash(keys[1]);
                         }
                         content = location;
-                        pb = peer.put(location).data(domain, content, dt);
+                        pb = peer.put(location).requestP2PConfiguration(rp).data(domain, content, dt);
 
                         //pb = peer.put(Number160.createHash(keys[0])).domainKey(Number160.createHash(keys[1])).versionKey(Number160.ZERO).data(dt);
                         break;
@@ -648,7 +695,7 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
                         if (keys[2] != null) {
                             content = Number160.createHash(keys[2]);
                         }
-                        pb = peer.put(location).data(location, domain, content, version, dt);
+                        pb = peer.put(location).requestP2PConfiguration(rp).data(location, domain, content, version, dt);
 
                         break;
                     default:
@@ -666,7 +713,7 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
                         if (keys[3] != null) {
                             version = Number160.createHash(keys[3]);
                         }
-                        pb = peer.put(location).data(location, domain, content, version, dt);
+                        pb = peer.put(location).requestP2PConfiguration(rp).data(location, domain, content, version, dt);
 
                         break;
                 }
@@ -687,6 +734,7 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
             FuturePut futurePut = pb.start();
             //futurePut.awaitUninterruptibly(4000);
             futurePut.awaitUninterruptibly();
+            
             dt.release();
             //DBase.commit();
             //DBase.getEngine().clearCache();
@@ -838,6 +886,7 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
 
         if (keys == null) {
             gt = peer.get(location).contentKey(content);
+  
         } else {
             switch (keys.length) {
                 case 1:
@@ -853,6 +902,7 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
                     content = location;
                     //System.out.println(keys[0]+" "+location + " " + content);
                     gt = peer.get(location).contentKey(content);
+                    
                     // Why not setting version/domain? perhaps the last version is not zero...
                     //gt = peer.get(location).domainKey(Number160.ZERO).contentKey(content).versionKey(Number160.ZERO);
 

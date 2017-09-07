@@ -31,8 +31,7 @@ public class CoreORB implements ORBInterface {
     private CoreQueue cq = null;
     private NetworkAdapterInterface P2P = null;
     private StorageAdapterInterface storage = null;
-    private StorageAdapterInterface localStorage = storage;
-
+    
     /**
      * Associates a CoreQueue object to this CoreORB
      *
@@ -80,26 +79,13 @@ public class CoreORB implements ORBInterface {
         this.storage = storage;
     }
 
-    /**
-     * Used to define the local storage adapter if this no local storage, use
-     * the default storage
-     *
-     * @param storage the storage implementation
-     */
-    public void setLocalStorage(StorageAdapterInterface storage) {
-        this.localStorage = storage;
-    }
-
-    
     
 
     /**
      * Saves the value under the key identification
      *
-     * @param key the key that identifies the data to be stored
+     * @param keys the key that identifies the data to be stored
      * @param value the value to store
-     * @param local identify if using local storage or other (if both are
-     * different)
      */
     @Override
     public void save(Serializable value, String...keys) {
@@ -112,10 +98,8 @@ public class CoreORB implements ORBInterface {
     /**
      * Saves the value under the key identification
      *
-     * @param key the key that identifies the data to be stored
+     * @param keys the key that identifies the data to be stored
      * @param value the value to store
-     * @param local identify if using local storage or other (if both are
-     * different)
      */
     @Override
     public void blocking_save(Serializable value, String...keys) {
@@ -132,6 +116,7 @@ public class CoreORB implements ORBInterface {
      * @param key the key that identifies the data to be read
      * @return the value if it exists, or null
      */
+    @Override
     public Serializable read(String...key) {
         if (storage != null) {
                 return storage.read(key);
@@ -147,11 +132,21 @@ public class CoreORB implements ORBInterface {
      * @param key the key that identifies the data to be stored
      */
     
+    @Override
     public void remove(String...key) {
         if (storage != null) {
                 storage.remove(key);
             
         }
+    }
+    
+    @Override
+    public boolean contains(String... keys) {
+        if (storage != null) {
+                return storage.contains(keys);
+            
+        }
+        return false;
     }
 
     /* ORBInterface methods
@@ -179,6 +174,11 @@ public class CoreORB implements ORBInterface {
         } catch (InterruptedException ex) {
             Logger.getLogger(CoreORB.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
+
+    @Override
+    public String getPeerID() {
+        return P2P.getPeerID();
     }
 
 }

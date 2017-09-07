@@ -322,6 +322,16 @@ public class Community implements ServiceInterface {
     public Serializable read(String...key) {
         return router.read(key);
     }
+    
+    /**
+     * Method to check if a data is on local storage
+     * @param keys
+     * @return boolean (True if local)
+     */
+    @Override
+    public boolean contains(String...keys) {
+        return router.contains(keys);
+    }
 
     @Override
     public void remove(String...key) {
@@ -438,18 +448,19 @@ public class Community implements ServiceInterface {
      * includes all files inside, recursively.
      */
     
-    private static List<String> filenames = new java.util.concurrent.CopyOnWriteArrayList<String>();
+    
     
     
     private static List<String> loadInput(String dir) {
+        List<String> filenames = new java.util.concurrent.CopyOnWriteArrayList<String>();
         if (filenames.isEmpty()) {
             File target = new File(dir);
 
-            if (target.isDirectory()) {
-                addDirectoryFiles(target);
-            } else { // target is a file
-                filenames.add(target.getPath());
-            }
+            //if (target.isDirectory()) {
+                addDirectoryFiles(target,filenames);
+            //} else { // target is a file
+                //filenames.add(target.getPath());
+            //}
         }
         
         // creates a modifiable list to avoid bug on Java 7 (on Java 8 it works)
@@ -459,10 +470,10 @@ public class Community implements ServiceInterface {
         return modifiableList;
     }
 
-    private static boolean addDirectoryFiles(File target) {
+    private static boolean addDirectoryFiles(File target,List<String> filenames) {
 
         if (!target.isDirectory()) {
-            filenames.add(target.getPath());
+            filenames.add(target.getPath()); // already added in the loadInput function 
             return false;
         }
 
@@ -470,10 +481,15 @@ public class Community implements ServiceInterface {
 
         if (listOfFiles != null) {
             for (File file : listOfFiles) {
-                addDirectoryFiles(file);
+                addDirectoryFiles(file,filenames);
             }
         }
         return true;
+    }
+
+    @Override
+    public String getPeerID() {
+        return router.getPeerID();
     }
 
 

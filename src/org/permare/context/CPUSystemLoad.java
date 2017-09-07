@@ -12,7 +12,6 @@
  */
 package org.permare.context;
 
-//import com.sun.istack.internal.logging.*;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,50 +19,50 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Process and System CPU load. 
- * it seems to read only VM CPU load. :( 
+ * Collects CPU system load. This value seems to be percentual of usage (user +
+ * system) observed by the VM.
+ * <b>Note:</b> This value use to be 0 in its first lecture (or at begining of
+ * the process execution).
+ *
  * @author kirsch
  */
-public class CPULoadCollector extends AbstractOSCollector {
-    
-    public CPULoadCollector() {
-        super.setName("CPU_Load");
-        super.setDescription("Processor load, System load, System average.");
+public class CPUSystemLoad extends AbstractOSCollector<Double> {
+
+    public static String COLLECTOR_NAME = "Thing.Device.CPU.System.Load";
+    public static String COLLECTOR_DESCR = "System percentual load.";
+
+    public CPUSystemLoad() {
+        super.setName(COLLECTOR_NAME);
+        super.setDescription(COLLECTOR_DESCR);
     }
 
-    
+    @Override
     public List<Double> collect() {
-        List<Double> results = new ArrayList<>();
+        List<Double> results = new ArrayList<>(1);
 
         if (this.getBean() instanceof com.sun.management.OperatingSystemMXBean) {
-            com.sun.management.OperatingSystemMXBean bean = 
-                    (com.sun.management.OperatingSystemMXBean) this.getBean();
-            
-            results.add(bean.getProcessCpuLoad());
+            com.sun.management.OperatingSystemMXBean bean
+                    = (com.sun.management.OperatingSystemMXBean) this.getBean();
             results.add(bean.getSystemCpuLoad());
+        } else {
+            Logger.getLogger(getClass().getName()).log(Level.INFO,
+                    "No current CPU load information available.");
         }
-        else {
-            Logger.getLogger(CPULoadCollector.class.getName()).log(Level.INFO, 
-                    "No current Process and CPU load information available, getting the average.");
-        }
-        
-        results.add(getBean().getSystemLoadAverage());
-        
+
         return results;
     }
-    
+
     @Override
     public boolean checkValue(Serializable value) {
         List<Double> loads = this.collect();
         // use only global load. For other checks, please include more info
-        Double load = loads.get(loads.size()-1); 
-        if ((Double)value <= load) {
-            return true;
+        if (!loads.isEmpty()) {
+            Double load = loads.get(loads.size() - 1);
+            if ((Double) value >= load) {
+                return true;
+            }
         }
-        else
-        {
-            return false;
-        }
+        return false;
     }
-    
+
 }

@@ -109,11 +109,13 @@ public class AcquiringMain {
     public void collectAndShow() {
         for (Collector c : this.collectors) {
             //System.out.println(c.getCollectorName() + " : " + c.getCollectorDescription());
+            System.out.println(c.getCollectorName());
+
             if (c.getClass() == AvailableDiskSpaceCollector.class) {
                 for (Object o : c.collect()) {
                     FileStoreStruct ad = (FileStoreStruct) o;
                     System.out.printf("%-20s %s %.4f \n", ad.store, ad.path, ad.freeSpace);
-                    
+
                 }
 
             } else {
@@ -126,12 +128,28 @@ public class AcquiringMain {
     }
 
     public void setCollectors() {
-        this.addCollector(new CPULoadCollector());
-        this.addCollector(new CPUAverageLoadCollector());
-        this.addCollector(new FreeMemoryCollector());
-        this.addCollector(new PhysicalMemoryCollector());
-        this.addCollector(new TotalProcessorsCollector());
+        this.addCollector(new CPUSystemLoad());
+        this.addCollector(new CPUSystemLoadAverage());
         this.addCollector(new AvailableDiskSpaceCollector());
+        //this.addCollector(new UnallocatedDiskSpaceCollector());
+        this.addCollector(new FreePhysicalMemoryCollector());
+        this.addCollector(new TotalPhysicalMemoryCollector());
+        this.addCollector(new FreeSwapMemoryCollector());
+        this.addCollector(new TotalSwapMemoryCollector());
+        this.addCollector(new FreeVMMemoryCollector());
+        this.addCollector(new TotalVMMemoryCollector());
+        this.addCollector(new TotalProcessorsCollector());
 
+        //Thing.Device.Storage.Available
+        //Thing.Device.Storage.Unallocated
+        //Thing.Device.Processor.Available
+        //Thing.Device.CPU.System.Load
+        //Thing.Device.CPU.System.Load.Average
+        //Thing.Device.Memory.Physical.Available
+        //Thing.Device.Memory.Physical.Total  
+        //Thing.Device.Memory.Swap.Available
+        //Thing.Device.Memory.Swap.Total
+        //Thing.VM.Memory.Available
+        //Thing.VM.Memory.Total
     }
 }

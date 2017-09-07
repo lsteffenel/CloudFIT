@@ -246,10 +246,24 @@ public class Submitter {
         Number160 mapperId = null;// Identifiant de l'instance Mapper
         Serializable result = null;
         try {
-            // ici on indique la classe qui fera le MAP
+            // set requirements for the code
             Properties reqs = new Properties();
-            reqs.put("Mem", "4G");
-            reqs.put("Disk", "30G");
+            
+            //Thing.Device.Storage.Available
+            //Thing.Device.Storage.Unallocated
+            //Thing.Device.Processor.Available
+            //Thing.Device.CPU.System.Load
+            //Thing.Device.CPU.System.Load.Average
+            //Thing.Device.Memory.Physical.Available
+            //Thing.Device.Memory.Physical.Total  
+            //Thing.Device.Memory.Swap.Available
+            //Thing.Device.Memory.Swap.Total
+            //Thing.VM.Memory.Available
+            //Thing.VM.Memory.Total
+            
+            reqs.put("Thing.VM.Memory.Total", "4000000");
+            reqs.put("Thing.Device.Storage.Available", "10000000");
+            // ici on indique la classe qui fera le MAP
             mapperId = community.plug(jar, app, mapargs,reqs);
             System.err.println("mapperId = " + mapperId);
             result = community.waitJob(mapperId);
