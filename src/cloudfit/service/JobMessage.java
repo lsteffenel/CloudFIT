@@ -48,7 +48,7 @@ public class JobMessage implements Serializable {
     public void setApp(String app) {
         this.app = app;
     }
-    
+
     /**
      * Constructor of this class.
      *
@@ -127,7 +127,7 @@ public class JobMessage implements Serializable {
     public void setData(Serializable data) {
         this.data = data;
     }
-    
+
     public Properties getReqs() {
         return reqs;
     }

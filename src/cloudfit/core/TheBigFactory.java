@@ -10,7 +10,6 @@
  * 
  * *************************************************************** *
  */
-
 package cloudfit.core;
 
 import cloudfit.application.ApplicationInterface;
@@ -19,8 +18,9 @@ import cloudfit.network.NetworkAdapterInterface;
 import cloudfit.network.TomP2PAdapter;
 import cloudfit.service.Community;
 import cloudfit.service.JobManagerInterface;
+import cloudfit.service.JobManager;
+import cloudfit.service.JobsScheduler;
 import cloudfit.service.ServiceInterface;
-import cloudfit.service.ThreadSolve;
 import cloudfit.storage.SerializedDiskStorage;
 import cloudfit.storage.StorageAdapterInterface;
 import cloudfit.util.Number160;
@@ -30,57 +30,55 @@ import java.util.Properties;
 /**
  * Main factory of the CloudFIT framework, provides object of several classes
  * TODO: perform class instantiation based on a properties file
+ *
  * @author Luiz Angelo STEFFENEL <Luiz-Angelo.Steffenel@univ-reims.fr>
  */
 public class TheBigFactory {
-    
-    
-    
-    public static Community getCommunity(String id, ORBInterface orb, RessourceManager rm)
-    {
+
+    public static Community getCommunity(String id, ORBInterface orb, RessourceManager rm) {
         return new Community(id, orb, rm);
     }
-    
-    public static RessourceManager getRM() {
-        return new RessourceManager();
+
+    public static RessourceManager getRM(JobsScheduler jobScheduler) {
+        return new RessourceManager(jobScheduler);
     }
-    
-    public static ORBInterface getORB()
-    {
+
+    public static JobsScheduler getJS() {
+        return new JobsScheduler();
+    }
+
+    public static ORBInterface getORB() {
         return new CoreORB();
     }
-    
-    public static CoreQueue getCoreQueue()
-    {
+
+    public static CoreQueue getCoreQueue() {
         CoreQueue queue = new CoreQueue();
         queue.start();
         return queue;
     }
-    
-    public static NetworkAdapterInterface getP2P (CoreQueue queue, InetSocketAddress peer)
-    {
-        
+
+    public static NetworkAdapterInterface getP2P(CoreQueue queue, InetSocketAddress peer) {
+
         //if (select.matches("EasyPastry".toLowerCase())) {
         return new EasyPastryAdapter(queue, peer);
         //}
         //else return null;
     }
-    
-    public static StorageAdapterInterface getStorage()
-    {
+
+    public static StorageAdapterInterface getStorage() {
         return new SerializedDiskStorage();
     }
-    
-    public static JobManagerInterface getThreadSolve(ServiceInterface service, Number160 jobId, ApplicationInterface jobClass, String[] args, Properties props)
-    {
+
+    public static JobManagerInterface getJobManager(ServiceInterface service, Number160 jobId, ApplicationInterface jobClass, String[] args, Properties props) {
 //        Class cl = Class.forName("com.bla.TestActivity");
 //        ThreadSolve ts2 = (ThreadSolve)cl.getConstructor(ServiceInterface.class, int.class , ApplicationInterface.class , String.class).newInstance(service, jobId, jobClass, args);
-        ThreadSolve TS = new ThreadSolve(service, jobId, jobClass, args, props);
-        
+        //ThreadSolve TS = new ThreadSolve(service, jobId, jobClass, args, props);
+        JobManager JM = new JobManager(service, jobId, jobClass, args, props);
+
         //TS.start();
-        return TS;
+        return JM;
     }
-    
+
     public static Community initNetwork(InetSocketAddress peer, String scopeName) {
         ///////////////////// Pastry
 
@@ -99,9 +97,8 @@ public class TheBigFactory {
 
         /* Creates a ressource Manager
          */
-        RessourceManager rm = getRM();
-
-        
+        JobsScheduler js = new JobsScheduler();
+        RessourceManager rm = getRM(js);
 
         //NetworkAdapterInterface P2P = new EasyPastryDHTAdapter(queue, peer, community);
         NetworkAdapterInterface P2P = new TomP2PAdapter(queue, peer);
@@ -111,10 +108,11 @@ public class TheBigFactory {
         /* creates a module to plug on the main class
          * and subscribe it to the messaging system
          */
-        if (scopeName == null)
+        if (scopeName == null) {
             scopeName = "vlan0";
+        }
         Community community = getCommunity(scopeName, TDTR, rm);
-        
+
         TDTR.subscribe(community);
 
         if (!scopeName.equals("vlan0")) {

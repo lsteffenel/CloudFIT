@@ -148,7 +148,7 @@ public class LANDiscoveryThread extends Thread {
             dsocket.setSoTimeout(timeout);
             dsocket.receive(response);
             System.err.println("Found a peer :" + deserialize(response.getData()));
-            
+
             if (deserialize(response.getData()).equals(myfulladd)) {
                 System.err.println("c'est moi même!!!!");
                 return null;

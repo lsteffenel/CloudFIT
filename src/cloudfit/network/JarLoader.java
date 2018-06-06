@@ -61,7 +61,7 @@ public class JarLoader extends ClassLoader {
 // Hidden data members.
     // Map from class or resource name to contents.
     private HashMap<String, byte[]> contentMap = new HashMap<String, byte[]>();
-	//private Map<String,byte[]> contentMap = new Map<String,byte[]>();
+    //private Map<String,byte[]> contentMap = new Map<String,byte[]>();
 
 // Exported constructors.
     /**

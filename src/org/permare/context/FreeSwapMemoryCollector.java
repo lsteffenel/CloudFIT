@@ -40,7 +40,7 @@ public class FreeSwapMemoryCollector extends AbstractOSCollector<Double> {
         if (this.getBean() instanceof com.sun.management.OperatingSystemMXBean) {
             com.sun.management.OperatingSystemMXBean bean
                     = (com.sun.management.OperatingSystemMXBean) this.getBean();
-            results.add(new Double(bean.getFreeSwapSpaceSize()/1024));
+            results.add(new Double(bean.getFreeSwapSpaceSize() / 1024));
         } else {
             Logger.getLogger(getClass().getName()).log(Level.INFO,
                     "No current physical memory information available, getting VM memory.");

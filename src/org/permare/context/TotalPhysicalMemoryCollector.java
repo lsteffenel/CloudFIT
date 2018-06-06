@@ -36,29 +36,24 @@ public class TotalPhysicalMemoryCollector extends AbstractOSCollector {
                     = (com.sun.management.OperatingSystemMXBean) this.getBean();
 
             results.add(new Double(bean.getTotalPhysicalMemorySize() / 1024));
-        }
-        else {
+        } else {
             Logger.getLogger(getClass().getName()).log(Level.INFO,
                     "No current information about physical memory available");
         }
-        
+
         return results;
     }
 
-
-   @Override
+    @Override
     public boolean checkValue(Serializable value) {
         List<Double> mems = this.collect();
         // use only VM memory. For other checks, please include more info
-        Double VMmem = mems.get(mems.size()-1); 
-        if ((Double)value <= VMmem) {
+        Double VMmem = mems.get(mems.size() - 1);
+        if ((Double) value <= VMmem) {
             return true;
-        }
-        else
-        {
+        } else {
             return false;
         }
     }
-    
 
 }

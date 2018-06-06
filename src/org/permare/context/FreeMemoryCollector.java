@@ -18,34 +18,30 @@ public class FreeMemoryCollector extends AbstractOSCollector {
         List<Double> results = new ArrayList<>();
 
         if (this.getBean() instanceof com.sun.management.OperatingSystemMXBean) {
-            com.sun.management.OperatingSystemMXBean bean =
-                    (com.sun.management.OperatingSystemMXBean) this.getBean();
+            com.sun.management.OperatingSystemMXBean bean
+                    = (com.sun.management.OperatingSystemMXBean) this.getBean();
 
-            results.add(new Double(bean.getFreePhysicalMemorySize()/1024));
-            results.add(new Double(bean.getFreeSwapSpaceSize()/1024));
+            results.add(new Double(bean.getFreePhysicalMemorySize() / 1024));
+            results.add(new Double(bean.getFreeSwapSpaceSize() / 1024));
         } else {
             Logger.getLogger(FreeMemoryCollector.class.getName()).log(Level.INFO,
                     "No current physical memory information available, getting VM memory.");
         }
-        results.add(new Double(Runtime.getRuntime().freeMemory()/1024)); // current free (based on current heap)
-        results.add(new Double(Runtime.getRuntime().maxMemory()/1024)); // max heap (Xmx)
+        results.add(new Double(Runtime.getRuntime().freeMemory() / 1024)); // current free (based on current heap)
+        results.add(new Double(Runtime.getRuntime().maxMemory() / 1024)); // max heap (Xmx)
         //results.add(new Double(Runtime.getRuntime().totalMemory()/1024)); // current heap max
-        
 
         return results;
     }
-    
-    
+
     @Override
     public boolean checkValue(Serializable value) {
         List<Double> mems = this.collect();
         // use only VM memory. For other checks, please include more info
-        Double VMmem = mems.get(mems.size()-1); 
-        if ((Double)value <= VMmem) {
+        Double VMmem = mems.get(mems.size() - 1);
+        if ((Double) value <= VMmem) {
             return true;
-        }
-        else
-        {
+        } else {
             return false;
         }
     }

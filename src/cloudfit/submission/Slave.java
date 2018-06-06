@@ -5,7 +5,6 @@ package cloudfit.submission;
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
 import cloudfit.core.CoreORB;
 import cloudfit.core.CoreQueue;
 import cloudfit.core.RessourceManager;
@@ -13,6 +12,7 @@ import cloudfit.core.TheBigFactory;
 import cloudfit.network.NetworkAdapterInterface;
 import cloudfit.network.TomP2PAdapter;
 import cloudfit.service.Community;
+import cloudfit.service.JobsScheduler;
 import cloudfit.storage.StorageAdapterInterface;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -30,7 +30,7 @@ import org.apache.commons.cli.PosixParser;
  *
  * @author Luiz Angelo STEFFENEL <Luiz-Angelo.Steffenel@univ-reims.fr>
  */
-public class Worker {
+public class Slave {
 
     private static Community community;
     private static CoreORB TDTR;
@@ -54,7 +54,6 @@ public class Worker {
                 .hasArg()
                 .withDescription("the name of the community to start with")
                 .create("scope");
-        
 
         options.addOption(node);
         options.addOption(port);
@@ -85,27 +84,19 @@ public class Worker {
         } else {
             peer = new InetSocketAddress(InetAddress.getLoopbackAddress(), 7777);
         }
-        
+
         if (line.hasOption("scope")) {
             scopeName = line.getOptionValue("scope");
         }
-       
+
         initNetwork(peer);
-        
-        
-        
+
         //TomP2PAdapter P2P = new TomP2PAdapter(null, peer, null);
-
         start = System.currentTimeMillis();
-
-       
-        
 
         //job.setReducer("Reducer");
         //for (int i=0; i<repetitions; i++) {
-        
 //                Thread.sleep(3000);
-        
         Scanner sc = new Scanner(System.in);
         String i = sc.next();
         //}
@@ -117,8 +108,7 @@ public class Worker {
         System.exit(0);
 
     }
-    
-    
+
     private static void initNetwork(InetSocketAddress peer) {
         ///////////////////// Pastry
 
@@ -136,24 +126,22 @@ public class Worker {
         TDTR.setQueue(queue);
 
         /* Creates a ressource Manager
-        */
-        
-        RessourceManager rm = TheBigFactory.getRM();
-        
+         */
+        JobsScheduler js = TheBigFactory.getJS();
+        RessourceManager rm = TheBigFactory.getRM(js);
 
         //NetworkAdapterInterface P2P = new EasyPastryDHTAdapter(queue, peer, community);
         NetworkAdapterInterface P2P = new TomP2PAdapter(queue, peer);
 
         TDTR.setNetworkAdapter(P2P);
 
-        
         /* creates a module to plug on the main class
          * and subscribe it to the messaging system
          */
-        community = TheBigFactory.getCommunity(scopeName, TDTR,rm);
+        community = TheBigFactory.getCommunity(scopeName, TDTR, rm);
 
         TDTR.subscribe(community);
-        
+
         if (!scopeName.equals("vlan0")) {
             // also creates a default community for "nameless" jobs
             Community vlan0 = TheBigFactory.getCommunity("vlan0", TDTR, rm);
@@ -166,14 +154,12 @@ public class Worker {
         System.err.println("starting network");
 
     }
-    
-    
 
     private static void usage(Options options) {
 
         // Use the inbuilt formatter class
         HelpFormatter formatter = new HelpFormatter();
-        formatter.printHelp("Worker", options);
+        formatter.printHelp("Slave", options);
 
     }
 

@@ -175,12 +175,11 @@ public class DHT {
             while (it.hasNext()) {
                 String file = (String) it.next();
                 boolean has = ((StorageAdapterInterface) P2P).contains(file);
-                String present = has?"":"not";
-                System.out.println("File "+ file + " is "+present+" local:");
+                String present = has ? "" : "not";
+                System.out.println("File " + file + " is " + present + " local:");
                 Serializable data = ((StorageAdapterInterface) P2P).read(file);
-                System.out.println("got file "+data);
+                System.out.println("got file " + data);
             }
-            
 
         }
 
@@ -194,8 +193,8 @@ public class DHT {
             while (it.hasNext()) {
                 String file = (String) it.next();
                 boolean has = ((StorageAdapterInterface) P2P).contains(file);
-                String present = has?"":"not";
-                System.out.println("File "+ file + " is "+present+" local:");
+                String present = has ? "" : "not";
+                System.out.println("File " + file + " is " + present + " local:");
             }
         }
 

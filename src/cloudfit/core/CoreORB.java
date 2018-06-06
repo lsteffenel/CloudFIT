@@ -31,7 +31,7 @@ public class CoreORB implements ORBInterface {
     private CoreQueue cq = null;
     private NetworkAdapterInterface P2P = null;
     private StorageAdapterInterface storage = null;
-    
+
     /**
      * Associates a CoreQueue object to this CoreORB
      *
@@ -79,8 +79,6 @@ public class CoreORB implements ORBInterface {
         this.storage = storage;
     }
 
-    
-
     /**
      * Saves the value under the key identification
      *
@@ -88,10 +86,10 @@ public class CoreORB implements ORBInterface {
      * @param value the value to store
      */
     @Override
-    public void save(Serializable value, String...keys) {
+    public void save(Serializable value, String... keys) {
         if (storage != null) {
-                storage.save(value, keys);
-            
+            storage.save(value, keys);
+
         }
     }
 
@@ -102,11 +100,11 @@ public class CoreORB implements ORBInterface {
      * @param value the value to store
      */
     @Override
-    public void blocking_save(Serializable value, String...keys) {
+    public void blocking_save(Serializable value, String... keys) {
         if (storage != null) {
-                storage.blocking_save(value, keys);
-                //storage.save(key,value, mutable);
-            
+            storage.blocking_save(value, keys);
+            //storage.save(key,value, mutable);
+
         }
     }
 
@@ -117,10 +115,10 @@ public class CoreORB implements ORBInterface {
      * @return the value if it exists, or null
      */
     @Override
-    public Serializable read(String...key) {
+    public Serializable read(String... key) {
         if (storage != null) {
-                return storage.read(key);
-            
+            return storage.read(key);
+
         } else {
             return null;
         }
@@ -131,20 +129,19 @@ public class CoreORB implements ORBInterface {
      *
      * @param key the key that identifies the data to be stored
      */
-    
     @Override
-    public void remove(String...key) {
+    public void remove(String... key) {
         if (storage != null) {
-                storage.remove(key);
-            
+            storage.remove(key);
+
         }
     }
-    
+
     @Override
     public boolean contains(String... keys) {
         if (storage != null) {
-                return storage.contains(keys);
-            
+            return storage.contains(keys);
+
         }
         return false;
     }

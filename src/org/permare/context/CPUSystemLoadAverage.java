@@ -17,16 +17,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Collects the CPU System load. 
- * Roughly, system load indicates how many processes are in the execution queue. 
- * If this number is less than the number of available CPU cores, that means all  
- * process are able to run. Otherwise, there are #Load-#Cores processes waiting
- * for execution. 
+ * Collects the CPU System load. Roughly, system load indicates how many
+ * processes are in the execution queue. If this number is less than the number
+ * of available CPU cores, that means all process are able to run. Otherwise,
+ * there are #Load-#Cores processes waiting for execution.
+ *
  * @see http://en.wikipedia.org/wiki/Load_(computing)
  * @author kirsch
  */
-public class CPUSystemLoadAverage extends AbstractOSCollector<Double>  {
-    
+public class CPUSystemLoadAverage extends AbstractOSCollector<Double> {
+
     public static String COLLECTOR_NAME = "Thing.Device.CPU.System.Load.Average";
     public static String COLLECTOR_DESCR = "System load average.";
 
@@ -35,14 +35,13 @@ public class CPUSystemLoadAverage extends AbstractOSCollector<Double>  {
         super.setDescription(COLLECTOR_DESCR);
     }
 
-    
     @Override
     public List<Double> collect() {
         List<Double> results = new ArrayList<>(1);
         results.add(new Double(getBean().getSystemLoadAverage()));
         return results;
     }
-    
+
     @Override
     public boolean checkValue(Serializable value) {
         List<Double> loads = this.collect();
@@ -55,5 +54,5 @@ public class CPUSystemLoadAverage extends AbstractOSCollector<Double>  {
         }
         return false;
     }
-    
+
 }

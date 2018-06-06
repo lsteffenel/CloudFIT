@@ -48,7 +48,7 @@ public class EasyPastryAdapter implements NetworkAdapterInterface, StorageAdapte
     private String topic = "CloudFIT.univ-reims.fr";
     private String context = "CloudFIT.univ-reims.fr";
     private CoreQueue MsgQueue;
-    
+
     public EasyPastryAdapter(CoreQueue queue, InetSocketAddress add) {
         try {
             if (add == null) {
@@ -66,7 +66,7 @@ public class EasyPastryAdapter implements NetworkAdapterInterface, StorageAdapte
                     InetAddress bside = ldt.getInetAddress();
                     add = new InetSocketAddress(bside, 7777);
                 }
-                
+
             }
             this.MsgQueue = queue;
             this.initKBR(add.getHostName(), add.getPort(), "easypastry-config.xml", topic);
@@ -74,7 +74,7 @@ public class EasyPastryAdapter implements NetworkAdapterInterface, StorageAdapte
             initDHT(context);
 //            this.initCast(subject);
 //            this.start();
-            
+
         } catch (Exception ex) {
             Logger.getLogger(EasyPastryAdapter.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -159,12 +159,10 @@ public class EasyPastryAdapter implements NetworkAdapterInterface, StorageAdapte
         try {
             Message element = ((EasyPastryContent) content).getContent();
 
-            
-                MsgQueue.put(element);
+            MsgQueue.put(element);
         } catch (InterruptedException ex) {
             Logger.getLogger(EasyPastryAdapter.class.getName()).log(Level.SEVERE, null, ex);
         }
-            
 
     }
 
@@ -238,17 +236,16 @@ public class EasyPastryAdapter implements NetworkAdapterInterface, StorageAdapte
      * @param value the value
      */
     @Override
-    public void save(Serializable value, String...keys) {
+    public void save(Serializable value, String... keys) {
         try {
             dht.put(keys[0], value);
-
 
         } catch (DHTException ex) {
             Logger.getLogger(EasyPastryAdapter.class
                     .getName()).log(Level.SEVERE, null, ex);
         }
     }
-    
+
     /**
      * Method to save the data using the Bunshin DHT - does not block, finally
      *
@@ -256,10 +253,9 @@ public class EasyPastryAdapter implements NetworkAdapterInterface, StorageAdapte
      * @param value the value
      */
     @Override
-    public void blocking_save(Serializable value, String...keys) {
+    public void blocking_save(Serializable value, String... keys) {
         try {
             dht.put(keys[0], value);
-
 
         } catch (DHTException ex) {
             Logger.getLogger(EasyPastryAdapter.class
@@ -274,10 +270,9 @@ public class EasyPastryAdapter implements NetworkAdapterInterface, StorageAdapte
      * @return the data, or null if nothing under this key
      */
     @Override
-    public Serializable read(String...key) {
+    public Serializable read(String... key) {
         try {
             return dht.get(key[0]);
-
 
         } catch (DHTException ex) {
             Logger.getLogger(EasyPastryAdapter.class
@@ -292,10 +287,9 @@ public class EasyPastryAdapter implements NetworkAdapterInterface, StorageAdapte
      * @param key the data identifier
      */
     @Override
-    public void remove(String...key) {
+    public void remove(String... key) {
         try {
             dht.remove(key[0]);
-
 
         } catch (DHTException ex) {
             Logger.getLogger(EasyPastryAdapter.class
@@ -307,7 +301,7 @@ public class EasyPastryAdapter implements NetworkAdapterInterface, StorageAdapte
     public boolean contains(String... keys) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
-    
+
     @Override
     public String getPeerID() {
         return conn.getNode().getId().toStringFull();

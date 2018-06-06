@@ -92,6 +92,6 @@ public class MutableContent extends ContentHashPastContent implements Serializab
             }
         }
 
-        return this; 
+        return this;
     }
 }

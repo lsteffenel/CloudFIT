@@ -13,7 +13,6 @@
 package cloudfit.application;
 
 import cloudfit.service.JobManagerInterface;
-import cloudfit.util.Number160;
 import java.io.Serializable;
 import java.util.ArrayList;
 
@@ -24,7 +23,7 @@ import java.util.ArrayList;
  *
  * @author kirsch
  */
-public interface ApplicationInterface extends Serializable,Cloneable {
+public interface ApplicationInterface extends Serializable, Cloneable {
 
     /**
      * returns total number of blocks to be consumed on a Job
@@ -52,17 +51,17 @@ public interface ApplicationInterface extends Serializable,Cloneable {
      */
     public void setAccumulator(Serializable value);
 
-    
     /**
-     * defines the execution arguments for the jobs. These arguments are mostly command-line arguments
-     * or parameters from the application profile     *
+     * defines the execution arguments for the jobs. These arguments are mostly
+     * command-line arguments or parameters from the application profile *
      */
     public void setArgs(String[] args);
-    
+
     /**
-     * defines the execution arguments for the jobs. These arguments are mostly command-line arguments
-     * or parameters from the application profile  
-     * This method also sets the JobManagerInterface to allow read/write using the StorageAdapter
+     * defines the execution arguments for the jobs. These arguments are mostly
+     * command-line arguments or parameters from the application profile This
+     * method also sets the JobManagerInterface to allow read/write using the
+     * StorageAdapter
      */
     public void setArgs(String[] args, JobManagerInterface ts);
 
@@ -78,7 +77,6 @@ public interface ApplicationInterface extends Serializable,Cloneable {
      */
     //public Serializable consumeBlock(int number, Serializable value);
     //public void consumeBlock(Serializable accumulator, int number, Serializable value);
-
     /**
      * executes a task for a job.
      */
@@ -89,26 +87,22 @@ public interface ApplicationInterface extends Serializable,Cloneable {
      * is <i>optional</i>.
      */
     //public Serializable initializeApplication();
-
     /**
      * Finalizes the consumer, returing its accumulator. This method is
      * <i>optional</i>.
      */
     public Serializable finalizeApplication(ArrayList tasksResults);
-    
+
     /**
-     * Stores a serialized object using the StorageAdapter. 
+     * Stores a serialized object using the StorageAdapter.
      */
-    public void save(int tasknumber, Serializable obj, String...keys);
-    
-    
+    public void save(int tasknumber, Serializable obj, String... keys);
+
     /**
-     * Reads a serialized object using the StorageAdapter. 
+     * Reads a serialized object using the StorageAdapter.
      */
-    public Serializable read(String...key);
-    
-    public void remove(String...key);    
-    
+    public Serializable read(String... key);
+
+    public void remove(String... key);
+
 }
-
-

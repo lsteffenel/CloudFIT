@@ -16,7 +16,7 @@ import cloudfit.core.CoreQueue;
 import cloudfit.core.Message;
 import cloudfit.service.Community;
 import cloudfit.service.JobMessage;
-import cloudfit.service.TaskStatusMessage;
+import cloudfit.application.TaskStatusMessage;
 import cloudfit.storage.ImmutableContent;
 import cloudfit.storage.MutableContent;
 import cloudfit.storage.PastReadContinuation;
@@ -284,7 +284,7 @@ public class EasyPastryDHTAdapter implements NetworkAdapterInterface, StorageAda
      */
     public void initDHT(String context) {
         try {
-        //        
+            //        
 //       // used for generating DHTPastContent object Ids.
             // this implements the "hash function" for our DHT
             environment = conn.getEnvironment();
@@ -331,7 +331,7 @@ public class EasyPastryDHTAdapter implements NetworkAdapterInterface, StorageAda
      * @param value the value
      */
     @Override
-    public void save(Serializable value, String...keys) {
+    public void save(Serializable value, String... keys) {
 
         final String fkey = keys[0];
         final Serializable fvalue = value;
@@ -349,7 +349,7 @@ public class EasyPastryDHTAdapter implements NetworkAdapterInterface, StorageAda
             }, new Continuation<Object, Exception>() {
 
                 public void receiveResult(Object result) {
-                // now you are on the freepastry thread, send the message or whatever, the result is what
+                    // now you are on the freepastry thread, send the message or whatever, the result is what
                     // execute() returned
                 }
 
@@ -358,22 +358,20 @@ public class EasyPastryDHTAdapter implements NetworkAdapterInterface, StorageAda
                 }
 
             }, environment.getSelectorManager(), environment.getTimeSource(), environment.getLogManager());
-        }
-        else
-        {
-                        environment.getProcessor().process(new Executable() {
+        } else {
+            environment.getProcessor().process(new Executable() {
 
                 public Object execute() {
                     // Now you are on the processing thread, do processor intensive task, and return the result
                     //save_mutable(fkey, fvalue);
-                    save_normal(fkey,fvalue); 
+                    save_normal(fkey, fvalue);
                     return null;
                 }
 
             }, new Continuation<Object, Exception>() {
 
                 public void receiveResult(Object result) {
-                // now you are on the freepastry thread, send the message or whatever, the result is what
+                    // now you are on the freepastry thread, send the message or whatever, the result is what
                     // execute() returned
                 }
 
@@ -444,7 +442,7 @@ public class EasyPastryDHTAdapter implements NetworkAdapterInterface, StorageAda
      * @param value the value
      */
     @Override
-    public void blocking_save(Serializable value, String...key) {
+    public void blocking_save(Serializable value, String... key) {
 
         final String fkey = key[0];
         final Serializable fvalue = value;
@@ -452,11 +450,11 @@ public class EasyPastryDHTAdapter implements NetworkAdapterInterface, StorageAda
         //blocking_save_normal(key, value);
         //blocking_save_version(key, value);
         boolean mutable = false;
-        if (mutable)
+        if (mutable) {
             blocking_save_mutable(fkey, fvalue);
-        else
+        } else {
             blocking_save_normal(fkey, value);
-        
+        }
 
         lock.unlock();
     }
@@ -522,7 +520,7 @@ public class EasyPastryDHTAdapter implements NetworkAdapterInterface, StorageAda
      * @return the data, or null if nothing under this key
      */
     @Override
-    public Serializable read(String...key) {
+    public Serializable read(String... key) {
         return read_normal(key[0]);
         //return read_version(key);
     }
@@ -549,7 +547,7 @@ public class EasyPastryDHTAdapter implements NetworkAdapterInterface, StorageAda
      * @param key the data identifier
      */
     @Override
-    public void remove(String...key) {
+    public void remove(String... key) {
 //        try {
 //            if (dht == null) {
 //                initDHT(context);

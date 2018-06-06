@@ -12,6 +12,7 @@ import cloudfit.core.TheBigFactory;
 import cloudfit.network.NetworkAdapterInterface;
 import cloudfit.network.TomP2PAdapter;
 import cloudfit.service.Community;
+import cloudfit.service.JobsScheduler;
 import cloudfit.storage.DHTStorageUnit;
 import cloudfit.storage.FileContainer;
 import cloudfit.storage.StorageAdapterInterface;
@@ -217,12 +218,11 @@ public class Submitter {
 
         TDTR.setQueue(queue);
 
-        
         /* Creates a ressource Manager
-        */
-        
-        RessourceManager rm = TheBigFactory.getRM();
-        
+         */
+        JobsScheduler js = TheBigFactory.getJS();
+        RessourceManager rm = TheBigFactory.getRM(js);
+
         /* creates a module to plug on the main class
          * and subscribe it to the messaging system
          */
@@ -248,7 +248,7 @@ public class Submitter {
         try {
             // set requirements for the code
             Properties reqs = new Properties();
-            
+
             //Thing.Device.Storage.Available
             //Thing.Device.Storage.Unallocated
             //Thing.Device.Processor.Available
@@ -260,11 +260,10 @@ public class Submitter {
             //Thing.Device.Memory.Swap.Total
             //Thing.VM.Memory.Available
             //Thing.VM.Memory.Total
-            
             reqs.put("Thing.VM.Memory.Total", "4000000");
             reqs.put("Thing.Device.Storage.Available", "10000000");
             // ici on indique la classe qui fera le MAP
-            mapperId = community.plug(jar, app, mapargs,reqs);
+            mapperId = community.plug(jar, app, mapargs, reqs);
             System.err.println("mapperId = " + mapperId);
             result = community.waitJob(mapperId);
         } catch (Exception ex) {

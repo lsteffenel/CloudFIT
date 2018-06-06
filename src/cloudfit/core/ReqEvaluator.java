@@ -7,9 +7,7 @@ package cloudfit.core;
 
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Properties;
-import java.util.Set;
 import org.permare.context.Collector;
 
 /**
@@ -18,27 +16,27 @@ import org.permare.context.Collector;
  */
 class ReqEvaluator {
 
-    private HashMap<String,Collector<Double>> collectors = new HashMap<>();
-    
-    public ReqEvaluator(HashMap<String,Collector<Double>> cols) {
+    private HashMap<String, Collector<Double>> collectors = new HashMap<>();
+
+    public ReqEvaluator(HashMap<String, Collector<Double>> cols) {
         this.collectors = cols;
     }
-    
-    public boolean checkRequirements (Properties reqRessources) {
+
+    public boolean checkRequirements(Properties reqRessources) {
         boolean checkPassed = true;
         Enumeration props = reqRessources.propertyNames();
-        while (props.hasMoreElements())
-        {
+        while (props.hasMoreElements()) {
             String key = (String) props.nextElement();
-            
-            if (collectors.containsKey(key))
-            {
+
+            if (collectors.containsKey(key)) {
                 Double value = Double.valueOf(reqRessources.getProperty(key));
                 boolean test = collectors.get(key).checkValue(value);
-                System.out.println(key + " = " + reqRessources.getProperty(key) + " ("+test+")");
-                if (test == false) checkPassed = false;
+                //System.out.println(key + " = " + reqRessources.getProperty(key) + " (" + test + ")");
+                if (test == false) {
+                    checkPassed = false;
+                }
             }
-            
+
         }
         return checkPassed;
     }

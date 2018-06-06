@@ -10,74 +10,86 @@
  * 
  * *************************************************************** *
  */
-
 package cloudfit.core;
 
 import java.io.Serializable;
 
 /**
  * Generic definition of protocol-layer (ORB) methods.
+ *
  * @author Luiz Angelo STEFFENEL <Luiz-Angelo.Steffenel@univ-reims.fr>
  */
 public interface ORBInterface {
+
     /**
-     * Method to send a message to the next node in the P2P overlay (ring, tree, etc)
+     * Method to send a message to the next node in the P2P overlay (ring, tree,
+     * etc)
+     *
      * @param obj the message
      */
     public void sendNext(Message obj);
 
     /**
-     * Method to send a message to the previous node in the P2P overlay (ring, tree, etc)
-     * @param obj the message 
+     * Method to send a message to the previous node in the P2P overlay (ring,
+     * tree, etc)
+     *
+     * @param obj the message
      */
     public void sendPrev(Message obj);
 
     /**
      * Method to send a message to all nodes in the P2P overlay
+     *
      * @param obj the message
      */
     public void sendAll(Message obj, boolean metoo);
 
     /**
-     * Method to send a message to another Service in the same machine (inner communication)
+     * Method to send a message to another Service in the same machine (inner
+     * communication)
+     *
      * @param obj the message
      */
     public void sendLocal(Message obj);
-    
+
     /**
      * Method to write a data entry on the storage
+     *
      * @param key
      * @param value
      */
-    public void save(Serializable value, String...keys);
-    
+    public void save(Serializable value, String... keys);
+
     /**
      * Method to write a data entry on the storage, waiting to return
+     *
      * @param keys
      * @param value
      */
-    public void blocking_save(Serializable value, String...keys);
-    
+    public void blocking_save(Serializable value, String... keys);
+
     /**
      * Method to read a data from the storage
+     *
      * @param keys
      * @return the data corresponding to the key
      */
-    public Serializable read(String...keys);
-    
+    public Serializable read(String... keys);
+
     /**
      * Method to check if a data is on local storage
+     *
      * @param keys
      * @return boolean (True if local)
      */
-    public boolean contains(String...keys);
-    
+    public boolean contains(String... keys);
+
     /**
      * Removes the value under the key identification from the storage
      *
      * @param keys the key that identifies the data to be stored
      */
-    public void remove(String...keys);
-    
+    public void remove(String... keys);
+
     public String getPeerID();
 }

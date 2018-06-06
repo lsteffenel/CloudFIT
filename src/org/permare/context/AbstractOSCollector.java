@@ -16,18 +16,18 @@ import java.io.Serializable;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 
-public abstract class AbstractOSCollector<T> extends AbstractCollector<T>  {
+public abstract class AbstractOSCollector<T> extends AbstractCollector<T> {
 
     private String name;
     private String description;
     private OperatingSystemMXBean bean = ManagementFactory.getOperatingSystemMXBean();
 
-        public OperatingSystemMXBean getBean() {
+    public OperatingSystemMXBean getBean() {
         return this.bean;
     }
 
     public void setBean(OperatingSystemMXBean bean) {
         this.bean = bean;
     }
-    
+
 }

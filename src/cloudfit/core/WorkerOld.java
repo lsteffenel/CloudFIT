@@ -10,37 +10,40 @@
  * 
  * *************************************************************** *
  */
-package cloudfit.service;
+package cloudfit.core;
 
+import cloudfit.application.TaskStatusMessage;
+import cloudfit.application.TaskStatus;
+import cloudfit.application.TaskSchedulerOld;
 import cloudfit.application.ApplicationInterface;
+import cloudfit.service.JobManagerInterface;
 import cloudfit.util.Number160;
 import java.io.Serializable;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
  * @author Luiz Angelo STEFFENEL <Luiz-Angelo.Steffenel@univ-reims.fr>
  */
-public class CyclicWorker extends Thread {
+public class WorkerOld extends Thread {
 
     private ApplicationInterface jobClass;
     private JobManagerInterface thrSolver;
-    private Scheduler ts;
-    private Logger log;
+    private TaskSchedulerOld ts;
+    //private Logger log;
 
-    public CyclicWorker(JobManagerInterface thrSolver, ApplicationInterface app, Scheduler ts) {
+    public WorkerOld(JobManagerInterface thrSolver, ApplicationInterface app, TaskSchedulerOld ts) {
         this.thrSolver = thrSolver;
         this.jobClass = app;
         this.ts = ts;
-        log = Logger.getLogger(ThreadSolve.class.getName());
+        //log = Logger.getLogger(ThreadSolve.class.getName());
     }
 
     @Override
     public void run() {
 
         TaskStatus taskId = ts.getWork();
-        while (taskId != null && thrSolver.getStatus()!=JobManagerInterface.COMPLETED) { // getWork returns null when there is no more tasks to execute or if the Job is finished
+        //while (taskId != null && thrSolver.getStatus()!=JobManagerInterface.COMPLETED) { // getWork returns null when there is no more tasks to execute or if the Job is finished
+        if (taskId != null && thrSolver.getStatus() != JobManagerInterface.COMPLETED) { // getWork returns null when there is no more tasks to execute or if the Job is finished
 //            try {
             if (taskId.getStatus() != TaskStatus.COMPLETED) {
 
@@ -56,14 +59,14 @@ public class CyclicWorker extends Thread {
                 Serializable serRes = solve(taskId);
                 //System.out.println("Ending "+taskId.getTaskId());
                 long end = System.currentTimeMillis();
-                log.log(Level.FINE, "task {0}:{1} {2} {3} ({4})", new Object[]{taskId.getJobId(), taskId.getTaskId(), Long.toString(init), Long.toString(end), new Long(end-init)});
+                //log.log(Level.FINE, "task {0}:{1} {2} {3} ({4})", new Object[]{taskId.getJobId(), taskId.getTaskId(), Long.toString(init), Long.toString(end), new Long(end-init)});
 
                 // Only prevents others that the task was finished if there is something to tell
                 // on the app, it can decide to return null if there was an error, or something else
                 if (serRes != null) {
                     // a final test, as results may have been learned from the network before ending this block
                     if (taskId.getStatus() != TaskStatus.COMPLETED) {
-                        
+
                         Number160 jbId = taskId.getJobId();
                         int tkId = taskId.getTaskId();
 
@@ -74,9 +77,8 @@ public class CyclicWorker extends Thread {
                         thrSolver.sendAll(tm, false);
                         taskId.setStatus(TaskStatus.COMPLETED);
 
-
                     }
-                } 
+                }
 //                else {  // someone announced it is working on this task
 //                    if (taskId.getStatus() == TaskStatus.STARTED) {
 //                        taskId.setStatus(TaskStatus.STARTED_DISTANT);
@@ -84,7 +86,7 @@ public class CyclicWorker extends Thread {
 //                }
             }
             taskId = ts.getWork();
-            
+
         }
         //System.err.println("No more tasks to do, leaving.");
     }

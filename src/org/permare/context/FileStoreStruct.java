@@ -12,6 +12,7 @@ import java.nio.file.FileStore;
  * @author Luiz Angelo STEFFENEL <Luiz-Angelo.Steffenel@univ-reims.fr>
  */
 public class FileStoreStruct {
+
     public double freeSpace;
     public String path;
     public FileStore store;

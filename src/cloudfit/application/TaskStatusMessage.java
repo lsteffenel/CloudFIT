@@ -10,13 +10,14 @@
  * 
  * *************************************************************** *
  */
-package cloudfit.service;
+package cloudfit.application;
 
 import cloudfit.util.Number160;
 import java.io.Serializable;
 
 /**
  * Class used to announce the status of a Task
+ *
  * @author Luiz Angelo STEFFENEL <Luiz-Angelo.Steffenel@univ-reims.fr>
  */
 public class TaskStatusMessage implements Serializable {
@@ -28,6 +29,7 @@ public class TaskStatusMessage implements Serializable {
 
     /**
      * Constructor of the class
+     *
      * @param jobId the JobID associated to this task
      * @param taskId the task number
      * @param value the result of the task
@@ -41,7 +43,8 @@ public class TaskStatusMessage implements Serializable {
 
     /**
      * returns the JobId associated to the announced task
-     * @return 
+     *
+     * @return
      */
     public Number160 getJobId() {
         return jobId;
@@ -49,7 +52,8 @@ public class TaskStatusMessage implements Serializable {
 
     /**
      * gets the task number of the annouced Task
-     * @return 
+     *
+     * @return
      */
     public int getTaskId() {
         return taskId;
@@ -57,12 +61,13 @@ public class TaskStatusMessage implements Serializable {
 
     /**
      * gets the value of the announces task
-     * @return 
+     *
+     * @return
      */
     public Serializable getTaskValue() {
         return TaskValue;
     }
-    
+
     public int getStatus() {
         return status;
     }

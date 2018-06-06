@@ -23,8 +23,6 @@ public class Serialization {
     // ! reuse this Object, it caches metadata. Performance degrades massively
 // if you create a new Configuration Object with each serialization !
 //   static FSTConfiguration conf = FSTConfiguration.createDefaultConfiguration();
-
-    
 //public Object readObject(InputStream stream) throws IOException, ClassNotFoundException {
 //        //FSTObjectInput in = conf.getObjectInput(stream);
 //        FSTObjectInput in = new FSTObjectInput(stream);
@@ -45,7 +43,6 @@ public class Serialization {
 //        out.close();
 //        //stream.close();
 //    }
-    
 //    //Legacy Java serialization
     public Object readObject(InputStream stream) throws IOException, ClassNotFoundException {
         ObjectInputStream in = new ObjectInputStream(stream);
@@ -53,8 +50,9 @@ public class Serialization {
         return result;
     }
 //
+
     public void writeObject(OutputStream stream, Object toWrite) throws IOException {
-        
+
         ObjectOutputStream out = new ObjectOutputStream(stream);
         out.writeObject(toWrite);
         out.flush();

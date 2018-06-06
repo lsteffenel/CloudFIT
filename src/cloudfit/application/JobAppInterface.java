@@ -12,6 +12,6 @@ import java.io.Serializable;
  * @author Luiz Angelo STEFFENEL <Luiz-Angelo.Steffenel@univ-reims.fr>
  */
 public interface JobAppInterface {
-    
+
     Serializable runJob(Object... parameters);
 }

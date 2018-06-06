@@ -64,7 +64,7 @@ public class CPUAverageLoadCollector extends AbstractOSCollector {
         for (int i = 0; i < observations.length; i++) {
             //observing the VM default measure
             observations[i] = getBean().getSystemLoadAverage();
-            
+
             try { //sleep a little before a new observation
                 Thread.sleep(this.interval);
             } catch (InterruptedException ex) {
@@ -93,18 +93,15 @@ public class CPUAverageLoadCollector extends AbstractOSCollector {
 
         return new Double(moy);
     }
-    
-    
+
     @Override
     public boolean checkValue(Serializable value) {
         List<Double> loads = this.collect();
         // use only the last reading
-        Double load = loads.get(loads.size()-1); 
-        if ((Double)value <= load) {
+        Double load = loads.get(loads.size() - 1);
+        if ((Double) value <= load) {
             return true;
-        }
-        else
-        {
+        } else {
             return false;
         }
     }

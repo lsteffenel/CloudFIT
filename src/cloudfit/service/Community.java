@@ -12,10 +12,11 @@
  */
 package cloudfit.service;
 
+import cloudfit.application.TaskStatusMessage;
 import cloudfit.application.ApplicationInterface;
 import cloudfit.core.Message;
 import cloudfit.core.ORBInterface;
-import cloudfit.core.RessourceManager;
+import cloudfit.core.RessourceManagerInterface;
 import cloudfit.storage.DHTStorageUnit;
 import cloudfit.storage.FileContainer;
 import cloudfit.util.Number160;
@@ -41,8 +42,8 @@ public class Community implements ServiceInterface {
     private String communityName = "vlan0"; // a small joke with the network community
     private ActiveBlockingQueue appQueue = null;
     private ORBInterface router = null;
-    protected JobsContainer JobsC = null;
-    private RessourceManager rm = null;
+    protected JobsScheduler JobsC = null;
+    private RessourceManagerInterface rm = null;
 
     /**
      * Constructor of the class
@@ -51,23 +52,22 @@ public class Community implements ServiceInterface {
      * message to the right service
      * @param na a reference to the ORB
      */
-    public Community(String pid, ORBInterface na, RessourceManager rm) {
+    public Community(String pid, ORBInterface na, RessourceManagerInterface rm) {
         this.communityName = pid;
         this.appQueue = new ActiveBlockingQueue(this.communityName, this);
         this.rm = rm;
+        this.JobsC = rm.getJobScheduler();
         this.appQueue.start();
         this.router = na;
-        this.JobsC = new JobsContainer();
-        JobsC.start();
-        System.out.println("Community "+ communityName + " started !");
+        //this.JobsC = new JobsScheduler();
+        //JobsC.start();
+        System.out.println("Community " + communityName + " started !");
     }
-    
-    
-    public RessourceManager getRessourceManager ()
-    {
+
+    public RessourceManagerInterface getRessourceManager() {
         return rm;
     }
-    
+
     /**
      * Method used to submit a job
      *
@@ -79,7 +79,7 @@ public class Community implements ServiceInterface {
 
         return plug(jar, app, args, null);
     }
-    
+
     /**
      * Method used to submit a job
      *
@@ -107,7 +107,7 @@ public class Community implements ServiceInterface {
 
         return plug(app, args, null);
     }
-    
+
     /**
      * Method used to submit a job
      *
@@ -313,28 +313,29 @@ public class Community implements ServiceInterface {
 
     // Storage methods
     @Override
-    public void save(Serializable value, String...keys) {
+    public void save(Serializable value, String... keys) {
         //router.save(key, value);
         router.blocking_save(value, keys);
     }
 
     @Override
-    public Serializable read(String...key) {
+    public Serializable read(String... key) {
         return router.read(key);
     }
-    
+
     /**
      * Method to check if a data is on local storage
+     * key list : (location, domain, content, version) 
      * @param keys
      * @return boolean (True if local)
      */
     @Override
-    public boolean contains(String...keys) {
+    public boolean contains(String... keys) {
         return router.contains(keys);
     }
 
     @Override
-    public void remove(String...key) {
+    public void remove(String... key) {
         router.remove(key);
     }
 
@@ -402,75 +403,71 @@ public class Community implements ServiceInterface {
     }
 
     /**
-     * Method to return the JobsContainer object representing the current state
+     * Method to return the JobsScheduler object representing the current state
      * of jobs/tasks. Used to feed joining nodes.
      *
-     * @return JobsContainer
+     * @return JobsScheduler
      */
-    public JobsContainer getCurrentState() {
+    public JobsScheduler getCurrentState() {
         return JobsC;
     }
-    
+
     public ArrayList<String> saveSrc(String src) {
         ArrayList<String> plainfiles = new ArrayList();
         List<String> files = loadInput(src);
 
-                System.err.println(files);
-                System.err.println(files.size());
+        System.err.println(files);
+        System.err.println(files.size());
 
-                Iterator it = files.iterator();
-                int number = 0;
-                while (it.hasNext()) {
-                    String file = (String) it.next();
-                    long init = System.currentTimeMillis();
-                    FileContainer fc = new FileContainer(file);
-                    DHTStorageUnit dsu = new DHTStorageUnit(null, -1, (Serializable) fc);
+        Iterator it = files.iterator();
+        int number = 0;
+        while (it.hasNext()) {
+            String file = (String) it.next();
+            long init = System.currentTimeMillis();
+            FileContainer fc = new FileContainer(file);
+            DHTStorageUnit dsu = new DHTStorageUnit(null, -1, (Serializable) fc);
 
-                    //((StorageAdapterInterface)P2P).blocking_save("input.data" + number, dsu, false);
-                    this.save(dsu, fc.getName());
+            //((StorageAdapterInterface)P2P).blocking_save("input.data" + number, dsu, false);
+            this.save(dsu, fc.getName());
 
-                    //save("input.data" + number, fc, false, number); 
-                    // number++;
-                    long fin = System.currentTimeMillis();
+            //save("input.data" + number, fc, false, number); 
+            // number++;
+            long fin = System.currentTimeMillis();
 
-                    if (!fc.getName().endsWith(".jar")) {
-                        plainfiles.add(fc.getName());
-                        //toto.add(fc.getName());
-                    }
-                    System.err.println(fc.getName() + " (" + number + ") saved in " + (fin - init) + " ms");
+            if (!fc.getName().endsWith(".jar")) {
+                plainfiles.add(fc.getName());
+                //toto.add(fc.getName());
+            }
+            System.err.println(fc.getName() + " (" + number + ") saved in " + (fin - init) + " ms");
 
-                }
-         return plainfiles;
+        }
+        return plainfiles;
     }
-    
-        /**
+
+    /**
      * looks for input files on the arguments. If argument is a directory, it
      * includes all files inside, recursively.
      */
-    
-    
-    
-    
     private static List<String> loadInput(String dir) {
         List<String> filenames = new java.util.concurrent.CopyOnWriteArrayList<String>();
         if (filenames.isEmpty()) {
             File target = new File(dir);
 
             //if (target.isDirectory()) {
-                addDirectoryFiles(target,filenames);
+            addDirectoryFiles(target, filenames);
             //} else { // target is a file
-                //filenames.add(target.getPath());
+            //filenames.add(target.getPath());
             //}
         }
-        
+
         // creates a modifiable list to avoid bug on Java 7 (on Java 8 it works)
         List<String> modifiableList = new ArrayList<String>(filenames);
         Collections.sort(modifiableList);
-        
+
         return modifiableList;
     }
 
-    private static boolean addDirectoryFiles(File target,List<String> filenames) {
+    private static boolean addDirectoryFiles(File target, List<String> filenames) {
 
         if (!target.isDirectory()) {
             filenames.add(target.getPath()); // already added in the loadInput function 
@@ -481,7 +478,7 @@ public class Community implements ServiceInterface {
 
         if (listOfFiles != null) {
             for (File file : listOfFiles) {
-                addDirectoryFiles(file,filenames);
+                addDirectoryFiles(file, filenames);
             }
         }
         return true;
@@ -491,6 +488,5 @@ public class Community implements ServiceInterface {
     public String getPeerID() {
         return router.getPeerID();
     }
-
 
 }

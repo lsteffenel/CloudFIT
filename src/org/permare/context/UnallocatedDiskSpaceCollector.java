@@ -10,7 +10,6 @@
  * 
  * *************************************************************** *
  */
-
 package org.permare.context;
 
 import java.io.IOException;
@@ -23,14 +22,16 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * collects available (unallocated) disk storage information by FileSystem and total.  
+ * collects available (unallocated) disk storage information by FileSystem and
+ * total.
+ *
  * @author kirsch
  */
 public class UnallocatedDiskSpaceCollector extends AbstractCollector<Double> {
 
     public static String COLLECTOR_NAME = "Thing.Device.Storage.Unallocated";
     public static String COLLECTOR_DESCR = "Unallocated storage space by FileSystem and total";
-    
+
     public UnallocatedDiskSpaceCollector() {
         super.setName(COLLECTOR_NAME);
         super.setDescription(COLLECTOR_DESCR);
@@ -40,23 +41,23 @@ public class UnallocatedDiskSpaceCollector extends AbstractCollector<Double> {
     public List<Double> collect() {
         double total = 0.0;
         List<Double> results = new ArrayList<>();
-        
-        for (FileStore fs: FileSystems.getDefault().getFileStores()) {
+
+        for (FileStore fs : FileSystems.getDefault().getFileStores()) {
             try {
                 //System.out.println(fs.type());
                 double space = fs.getUnallocatedSpace() / 1024;
                 total += space;
                 results.add(new Double(space));
             } catch (IOException ex) {
-                Logger.getLogger(AvailableDiskSpaceCollector.class.getName()).log(Level.WARNING, 
+                Logger.getLogger(AvailableDiskSpaceCollector.class.getName()).log(Level.WARNING,
                         "Disk space information is unavailable", ex);
-            }            
+            }
         }
-        
+
         results.add(new Double(total));
-        
+
         return results;
-    
+
     }
 
     @Override
@@ -64,5 +65,5 @@ public class UnallocatedDiskSpaceCollector extends AbstractCollector<Double> {
         return true;
         //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
-    
+
 }

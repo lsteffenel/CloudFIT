@@ -16,6 +16,7 @@ import cloudfit.application.ApplicationInterface;
 import cloudfit.application.Distributed;
 import cloudfit.core.TheBigFactory;
 import cloudfit.network.JarLoader;
+import cloudfit.core.WorkData;
 import cloudfit.storage.DHTStorageUnit;
 import cloudfit.storage.FileContainer;
 import cloudfit.util.Number160;
@@ -23,9 +24,9 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Properties;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -36,17 +37,16 @@ import java.util.logging.Logger;
  *
  * @author Luiz Angelo STEFFENEL <Luiz-Angelo.Steffenel@univ-reims.fr>
  */
-public class JobsContainer extends Thread implements Serializable {
+public class JobsScheduler implements Serializable {
 
-    private ArrayList<JobManagerInterface> Jobs = null;
-    private int jobCounter = 0;
+    private CopyOnWriteArrayList<JobManagerInterface> Jobs = null;
 
     /**
      * Constructor. Initializes the jobs array
      */
-    public JobsContainer() {
-        this.setName("JobsContainer");
-        this.Jobs = new ArrayList<JobManagerInterface>();
+    public JobsScheduler() {
+        //this.setName("JobsContainer");
+        Jobs = new CopyOnWriteArrayList<JobManagerInterface>();
     }
 
     /**
@@ -65,13 +65,9 @@ public class JobsContainer extends Thread implements Serializable {
         return null;
     }
 
-    public int getJobCounter() {
-        return jobCounter;
-    }
-
     public void remove(JobMessage obj) {
         JobManagerInterface js = this.getJob(obj.getJobId());
-        this.Jobs.remove(js);
+        Jobs.remove(js);
     }
 
     public void addJob(JobMessage obj, ServiceInterface comm) {
@@ -83,14 +79,14 @@ public class JobsContainer extends Thread implements Serializable {
             String[] jobargs = obj.getArgs();
             Properties reqs = obj.getReqs();
 
-            JobManagerInterface TS = TheBigFactory.getThreadSolve(comm, jobId, jobClass, jobargs, reqs);
+            JobManagerInterface JM = TheBigFactory.getJobManager(comm, jobId, jobClass, jobargs, reqs);
             if (obj.getData() != null) {
                 //System.err.println("---->>>>> Accepting "+((CopyOnWriteArrayList<TaskStatus>)obj.getData()).size());
-                TS.setTaskList(obj.getData());
+                JM.setTaskList(obj.getData());
             }
-            TS.setOriginalMsg(obj);
+            JM.setOriginalMsg(obj);
 
-            this.Jobs.add(TS);
+            Jobs.add(JM);
         } else { // submission through an external jobClass (jar)
             try {
                 String jarFile = obj.getJar();
@@ -111,66 +107,70 @@ public class JobsContainer extends Thread implements Serializable {
 
                     String[] jobargs = obj.getArgs();
                     Properties reqs = obj.getReqs();
-                    
-                    JobManagerInterface TS = TheBigFactory.getThreadSolve(comm, jobId, jobClass, jobargs, reqs);
+
+                    JobManagerInterface JM = TheBigFactory.getJobManager(comm, jobId, jobClass, jobargs, reqs);
                     if (obj.getData() != null) {
-                        TS.setTaskList(obj.getData());
+                        JM.setTaskList(obj.getData());
 
                     }
-                    TS.setOriginalMsg(obj);
-                    this.Jobs.add(TS);
-                    
+                    JM.setOriginalMsg(obj);
+                    Jobs.add(JM);
+                    System.err.println("new job inserted");
+
+                } else {
+                    System.out.println("Jar file not found");
                 }
-                else {System.out.println("Jar file not found");}
-           } catch (ClassNotFoundException ex) {
-                Logger.getLogger(JobsContainer.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (ClassNotFoundException ex) {
+                Logger.getLogger(JobsScheduler.class.getName()).log(Level.SEVERE, null, ex);
             } catch (NoSuchMethodException ex) {
-                Logger.getLogger(JobsContainer.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(JobsScheduler.class.getName()).log(Level.SEVERE, null, ex);
             } catch (SecurityException ex) {
-                Logger.getLogger(JobsContainer.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(JobsScheduler.class.getName()).log(Level.SEVERE, null, ex);
             } catch (InstantiationException ex) {
-                Logger.getLogger(JobsContainer.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(JobsScheduler.class.getName()).log(Level.SEVERE, null, ex);
             } catch (IllegalAccessException ex) {
-                Logger.getLogger(JobsContainer.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(JobsScheduler.class.getName()).log(Level.SEVERE, null, ex);
             } catch (IllegalArgumentException ex) {
-                Logger.getLogger(JobsContainer.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(JobsScheduler.class.getName()).log(Level.SEVERE, null, ex);
             } catch (InvocationTargetException ex) {
-                Logger.getLogger(JobsContainer.class.getName()).log(Level.SEVERE, null, ex);
-           } catch (IOException ex) {
-                Logger.getLogger(JobsContainer.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(JobsScheduler.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (IOException ex) {
+                Logger.getLogger(JobsScheduler.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
+        //System.err.println(Jobs.size());
 
     }
 
-    public void run() {
-        while (true) {
+    public synchronized WorkData getWork() {
+
+        //System.err.println("getting job ");
+        //System.err.println("queue size"+ Jobs.size());
+        WorkData res = null;
+        while (res == null) {
             Iterator<JobManagerInterface> it = Jobs.iterator();
+
             while (it.hasNext()) {
                 JobManagerInterface element = it.next();
-                if (element.getStatus() == element.NEW) {
-                    Thread toto = new Thread(element);
-                    toto.start();
-                    try {
-                        // wait until completion or just jump out if the requirements don't match
-                        while (element.getStatus() != element.COMPLETED && element.getStatus() != element.NOMATCH) {
-                            Thread.sleep(1000);
-                        }
-                    } catch (InterruptedException ex) {
-                        Logger.getLogger(JobsContainer.class.getName()).log(Level.SEVERE, null, ex);
+                //System.err.println("trying this " + element.getJobId());
+                int status = element.getStatus();
+                if (status != element.COMPLETED) {
+                    res = element.getWork();
+                    if (res != null) {
+                        //System.err.println("new job " + res.thrSolver.getJobId());
+                        return res;
                     }
-                    break;
                 }
+
             }
             try {
-
                 Thread.sleep(1000);
-
+                //System.err.println("no job, waiting");
             } catch (InterruptedException ex) {
-                Logger.getLogger(JobsContainer.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(JobsScheduler.class.getName()).log(Level.SEVERE, null, ex);
             }
-
         }
+        return null;
     }
 
 }

@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package cloudfit.service;
+package cloudfit.application;
 
 import cloudfit.util.Number160;
 import cloudfit.util.PropertiesUtil;
@@ -16,14 +16,14 @@ import java.util.concurrent.CopyOnWriteArrayList;
  *
  * @author angelo
  */
-public class Scheduler {
+public class TaskSchedulerOld {
 
     private CopyOnWriteArrayList<TaskStatus> taskList = null;
     //private int completed = 0;
     private int backoff = 10000;
     private boolean weHaveAllResults = false;
 
-    public Scheduler(Number160 jobId, int nbTasks) {
+    public TaskSchedulerOld(Number160 jobId, int nbTasks) {
         startTaskList(jobId, nbTasks);
 
         String prop = PropertiesUtil.getProperty("backoff");
@@ -84,15 +84,14 @@ public class Scheduler {
             }
         }
         weHaveAllResults = (done == this.taskList.size());
-            
+
     }
 
     public int size() {
         return taskList.size();
     }
-    
-    public boolean haveAllResults()
-    {
+
+    public boolean haveAllResults() {
         return weHaveAllResults;
     }
 
@@ -120,11 +119,11 @@ public class Scheduler {
                     Thread.sleep(backoff);
                     //System.err.println("sleep backoff ");
                 } catch (InterruptedException ex) {
-                    //Logger.getLogger(Scheduler.class.getName()).log(Level.SEVERE, null, ex);
+                    //Logger.getLogger(TaskSchedulerOld.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
             it = taskList.iterator();
-        
+
             while (it.hasNext()) {
                 TaskStatus ts = (TaskStatus) it.next();
                 if (ts.getStatus() == TaskStatus.STARTED_DISTANT) {
@@ -138,9 +137,8 @@ public class Scheduler {
                 }
             }
         } while (remaining == true && !weHaveAllResults);
-        
-        // ok, no free tasks anymore. Looking for a locally started (stuck ?). But before, let me give it a chance (backoff)
 
+        // ok, no free tasks anymore. Looking for a locally started (stuck ?). But before, let me give it a chance (backoff)
         remaining = false;
         do {
             if (remaining == true) {
@@ -148,11 +146,11 @@ public class Scheduler {
                     Thread.sleep(backoff);
                     //System.err.println("sleep backoff ");
                 } catch (InterruptedException ex) {
-                    //Logger.getLogger(Scheduler.class.getName()).log(Level.SEVERE, null, ex);
+                    //Logger.getLogger(TaskSchedulerOld.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
             it = taskList.iterator();
-        
+
             while (it.hasNext()) {
                 TaskStatus ts = (TaskStatus) it.next();
                 if (ts.getStatus() == TaskStatus.STARTED) {
@@ -166,9 +164,8 @@ public class Scheduler {
                 }
             }
         } while (remaining == true && !weHaveAllResults);
-        
-        // nothing else to run, distant or local. Return null to stop workers
 
+        // nothing else to run, distant or local. Return null to stop workers
         return null;
     }
 
@@ -262,7 +259,7 @@ public class Scheduler {
         return weHaveAllResults;
     }
 
-    TaskStatus getTaskStatus(int taskId) {
+    public TaskStatus getTaskStatus(int taskId) {
         TaskStatus currentTask = null;
         for (int i = 0; i < taskList.size(); ++i) {
             currentTask = taskList.get(i);

@@ -10,24 +10,24 @@
  * 
  * *************************************************************** *
  */
-
 package cloudfit.storage;
 
 import java.io.Serializable;
 
 /**
  * Generic definition of the methods associated to the storage of data
+ *
  * @author Luiz Angelo STEFFENEL <Luiz-Angelo.Steffenel@univ-reims.fr>
  */
 public interface StorageAdapterInterface {
 
-    public void save(Serializable value, String...keys);
+    public void save(Serializable value, String... keys);
 
-    public void blocking_save(Serializable value, String...keys);
-    
+    public void blocking_save(Serializable value, String... keys);
+
     public boolean contains(String... keys);
-    
-    public Serializable read(String...keys);
 
-    public void remove(String...keys);
+    public Serializable read(String... keys);
+
+    public void remove(String... keys);
 }

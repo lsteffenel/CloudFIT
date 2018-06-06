@@ -36,7 +36,7 @@ public class AvailableDiskSpaceCollector extends AbstractOSCollector<FileStoreSt
         super.setName(COLLECTOR_NAME);
         super.setDescription(COLLECTOR_DESCR);
     }
-    
+
     @Override
     public List collect() {
         int availFS = 0;
@@ -63,7 +63,6 @@ public class AvailableDiskSpaceCollector extends AbstractOSCollector<FileStoreSt
         //results.add(new Double(availFS));
         return results;
     }
-
 
     @Override
     public boolean checkValue(Serializable value) {

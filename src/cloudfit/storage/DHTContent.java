@@ -12,5 +12,6 @@ import java.io.Serializable;
  * @author angelo
  */
 public interface DHTContent {
-   public Serializable getContent();
+
+    public Serializable getContent();
 }

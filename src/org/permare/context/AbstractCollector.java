@@ -10,17 +10,17 @@
  * 
  * *************************************************************** *
  */
-
 package org.permare.context;
 
 /**
  * Abstract class implementing the basis (name and description handling) for a
- * collector. 
+ * collector.
+ *
  * @author kirsch
  * @param <T> collects date represented by the class T
  */
 public abstract class AbstractCollector<T> implements Collector<T> {
-    
+
     private String name;
     private String description;
 
@@ -39,16 +39,15 @@ public abstract class AbstractCollector<T> implements Collector<T> {
     public void setDescription(String description) {
         this.description = description;
     }
-    
+
     @Override
     public String getCollectorName() {
         return this.name;
     }
-    
+
     @Override
     public String getCollectorDescription() {
         return this.description;
     }
-    
-   
+
 }

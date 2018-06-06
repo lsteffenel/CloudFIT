@@ -12,18 +12,20 @@
  */
 package cloudfit.service;
 
+import cloudfit.application.TaskStatusMessage;
+import cloudfit.application.TaskStatus;
 import cloudfit.application.ApplicationInterface;
-import cloudfit.core.RessourceManager;
+import cloudfit.application.TaskScheduler;
+import cloudfit.core.RessourceManagerInterface;
+import cloudfit.core.WorkData;
 import cloudfit.util.Number160;
 import cloudfit.util.SingleLineFormatter;
 import java.io.IOException;
 import java.io.Serializable;
-import static java.lang.Math.min;
 import java.util.ArrayList;
 import java.util.Properties;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
@@ -34,24 +36,23 @@ import org.apache.commons.lang3.SerializationUtils;
  *
  * @author Luiz Angelo STEFFENEL <Luiz-Angelo.Steffenel@univ-reims.fr>
  */
-public class ThreadSolve implements JobManagerInterface {
+public class JobManager implements JobManagerInterface {
 
     private Number160 jobId;
-    private int nbWorkers = 4;
     private int status = 0; // -1 = stateTransfer, 0 = new, 1 = running, 2 = finished
     private boolean Finished = false;
     private Serializable Accumulator = null;
     private ExecutorService executor;
     private ApplicationInterface jobClass;
     private ServiceInterface service;
-    private Scheduler scheduler;
-    private static final Logger log = Logger.getLogger(ThreadSolve.class.getName());
+    private TaskScheduler scheduler;
+    private static final Logger log = Logger.getLogger(JobManager.class.getName());
     private static FileHandler fh = null;
     private JobMessage obj = null;
-    private RessourceManager RM = null;
+    private RessourceManagerInterface RM = null;
     private Properties reqRessources = null;
 
-    public ThreadSolve(ServiceInterface service, Number160 jobId, ApplicationInterface jobClass, String[] args, Properties requirements) {
+    public JobManager(ServiceInterface service, Number160 jobId, ApplicationInterface jobClass, String[] args, Properties requirements) {
         try {
             fh = new FileHandler("TestLogging.log", true);
             //fh.setFormatter(new SimpleFormatter());
@@ -84,64 +85,45 @@ public class ThreadSolve implements JobManagerInterface {
         //jobClass.initializeApplication();
         jobClass.numberOfBlocks();
         System.err.println("InitNumberofBlocks = " + jobClass.getNumberOfBlocks());
-        scheduler = new Scheduler(jobId, jobClass.getNumberOfBlocks());
-//
-//        // first, get the number of available cores
-//        nbWorkers = Runtime.getRuntime().availableProcessors();
-//        // now, checks if the user definied max nbworkers
-//        String prop = PropertiesUtil.getProperty("nbworkers");
-//        if (prop != null) {
-//            nbWorkers = min(Integer.parseInt(prop), nbWorkers);
-//        }
-
-        RM = service.getRessourceManager();
-
-        boolean resourcesMatch = RM.checkRequirements(reqRessources); // check if the requirements match with the CPU/memory/etc 
-
-        if (resourcesMatch) {
-
-            do {
-                nbWorkers = RM.howManyCores();
-                if (nbWorkers == 0) {
-                    nbWorkers = 1; // try 1 even if there is none available, will only get when available
-                }
-
-                // adapt the number of the workers to the size of the job
-                nbWorkers = min(jobClass.getNumberOfBlocks(), nbWorkers);
-            } while (!RM.tryAcquire(nbWorkers));
-
-            //threads = new CyclicWorker[nbWorkers];
-            executor = Executors.newFixedThreadPool(nbWorkers);
-        } else {
-            setStatus(NOMATCH);
-        }
+        scheduler = new TaskScheduler(jobId, jobClass.getNumberOfBlocks());
 
     }
 
-    @SuppressWarnings("empty-statement")
-    public void run() {
-        Thread.currentThread().setName("ThreadSolve " + jobId);
+    public WorkData getWork() {
 
-        setFinished(false);
-        setStatus(STARTED);
-        System.err.println("Tasklist.size() = " + scheduler.size());
-        for (int i = 0; i < nbWorkers; i++) {
+        if (!this.isFinished()) {
+            
+            RM = service.getRessourceManager();
 
-            String[] args = jobClass.getArgs();
-            ApplicationInterface jobInstance = SerializationUtils.clone(jobClass);
-            jobInstance.setArgs(args, this);
-            CyclicWorker worker = new CyclicWorker(this, jobInstance, scheduler);
-            executor.execute(worker);
-        }
+            boolean resourcesMatch = RM.checkRequirements(reqRessources); // check if the requirements match with the CPU/memory/etc 
+            //System.err.println("getting job " + resourcesMatch);
+            if (resourcesMatch) {
 
-        try {
-            while (!this.isFinished()) {
-                Thread.sleep(1000);
+                //Thread.currentThread().setName("ThreadSolve " + jobId);
+                setFinished(false);
+                setStatus(STARTED);
+                //System.err.println("Tasklist.size() = " + scheduler.size());
+
+                String[] args = jobClass.getArgs();
+                ApplicationInterface jobInstance = SerializationUtils.clone(jobClass);
+                jobInstance.setArgs(args, this);
+
+                TaskStatus taskid = scheduler.getWork();
+                if (taskid != null) {
+                    WorkData pack = new WorkData(this, jobInstance, scheduler.getWork());
+                    return pack;
+                } else {
+                    return null;
+                }
+            } else {
+                if (getStatus() != STARTED && getStatus() != COMPLETED) {
+                    setStatus(NOMATCH);
+                    return null;
+                }
             }
-        } catch (InterruptedException ex) {
-            Logger.getLogger(ThreadSolve.class.getName()).log(Level.SEVERE, null, ex);
+
         }
-        //RM.release(nbWorkers);
+        return null;
     }
 
     @Override
@@ -156,11 +138,8 @@ public class ThreadSolve implements JobManagerInterface {
             scheduler.setTaskValue(obj, local);
 
             if (scheduler.haveAllResults()) {
-                RM.release(nbWorkers);
                 setStatus(COMPLETED);
                 setFinished(true);
-
-                executor.shutdownNow();
             }
         }
     }
@@ -174,7 +153,7 @@ public class ThreadSolve implements JobManagerInterface {
 //        if (Accumulator == null) {
 //            Accumulator = new MultiMap<String, Integer>();
 //            // TODO: call ApplicationInterface.finalizeApplication() to run the Accumulator code.
-//            // call Scheduler to retrive all task results and compose a single accumulator
+//            // call TaskScheduler to retrive all task results and compose a single accumulator
 //        }
 
         ArrayList<Serializable> al = new ArrayList();
@@ -303,6 +282,14 @@ public class ThreadSolve implements JobManagerInterface {
     public JobMessage getOriginalMsg() {
 
         return this.obj;
+    }
+
+    @Override
+    public boolean checkMatching() {
+        RM = service.getRessourceManager();
+
+        boolean resourcesMatch = RM.checkRequirements(reqRessources);
+        return resourcesMatch;
     }
 
 }

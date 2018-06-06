@@ -5,13 +5,11 @@
  */
 package cloudfit.core;
 
-import cloudfit.service.JobsScheduler;
 import cloudfit.util.PropertiesUtil;
 import static java.lang.Math.min;
 import java.util.HashMap;
 import java.util.Properties;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import org.permare.context.*;
 
@@ -19,20 +17,13 @@ import org.permare.context.*;
  *
  * @author Luiz Angelo STEFFENEL <Luiz-Angelo.Steffenel@univ-reims.fr>
  */
-public class RessourceManager implements RessourceManagerInterface {
+public class RessourceManagerOld {
 
     int nbWorkers = 1;
-    //private final Semaphore available;
+    private final Semaphore available;
     private HashMap<String, Collector<Double>> collectors = new HashMap<>();
-    private JobsScheduler js;
-    private ThreadPoolExecutor executive;
-    
-    public JobsScheduler getJobScheduler() {
-        return js;
-    }
 
-    public RessourceManager(JobsScheduler js) {
-        this.js = js;
+    public RessourceManagerOld() {
         // first, get the number of available cores
         nbWorkers = Runtime.getRuntime().availableProcessors();
         // now, checks if the user definied max nbworkers
@@ -40,25 +31,34 @@ public class RessourceManager implements RessourceManagerInterface {
         if (prop != null) {
             nbWorkers = min(Integer.parseInt(prop), nbWorkers);
         }
-        //available = new Semaphore(nbWorkers, true);
+        available = new Semaphore(nbWorkers, true);
 
         setCollectors();
-
-        executive = new ThreadPoolExecutor(nbWorkers, nbWorkers,
-                0L, TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<Runnable>());
-
-        executive.setMaximumPoolSize(nbWorkers);
-
-        for (int i = 0; i < nbWorkers; i++) {
-
-            Worker worker = new Worker(this);
-            executive.execute(worker);
-        }
     }
 
     public int howManyCores() {
-        return nbWorkers;
+        return available.availablePermits();
+    }
+
+    /**
+     * Tries to acquire a give number of cores. If unavailable, wait up to one
+     * second, otherwise return with false
+     *
+     * @param permits
+     * @return
+     */
+    public boolean tryAcquire(int permits) {
+        try {
+            System.out.println("trying to acquire " + permits);
+            return available.tryAcquire(permits, 1, TimeUnit.SECONDS);
+        } catch (InterruptedException ex) {
+            return false;
+        }
+    }
+
+    public void release(int permits) {
+        System.out.println("Releasing!!! " + permits);
+        available.release(permits);
     }
 
     public boolean checkRequirements(Properties reqRessources) {
@@ -78,7 +78,9 @@ public class RessourceManager implements RessourceManagerInterface {
         this.collectors.remove(c.getCollectorName());
     }
 
-    @Override
+    //public List<Collector<Double>> getCollectors() {
+    //    return this.collectors;
+    //}
     public void setCollectors() {
 
         this.addCollector(new CPUSystemLoad());
@@ -93,11 +95,6 @@ public class RessourceManager implements RessourceManagerInterface {
         this.addCollector(new TotalVMMemoryCollector());
         this.addCollector(new TotalProcessorsCollector());
 
-    }
-
-    @Override
-    public WorkData getWork() {
-        return js.getWork();
     }
 
 }

@@ -15,7 +15,9 @@ package cloudfit.core;
 import java.io.Serializable;
 
 /**
- * Defines a protocol-level message (encapsulates Service-level messages, transmitted inside a NetworkAdapter message)
+ * Defines a protocol-level message (encapsulates Service-level messages,
+ * transmitted inside a NetworkAdapter message)
+ *
  * @author Luiz Angelo STEFFENEL <Luiz-Angelo.Steffenel@univ-reims.fr>
  */
 public class Message implements Serializable {
@@ -25,7 +27,8 @@ public class Message implements Serializable {
 
     /**
      * Constructor of the class
-     * @param dest the identifier of the destination at the Service level 
+     *
+     * @param dest the identifier of the destination at the Service level
      * @param content the message to send
      */
     public Message(String dest, Serializable content) {

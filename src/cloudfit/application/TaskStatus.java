@@ -10,7 +10,7 @@
  * 
  * *************************************************************** *
  */
-package cloudfit.service;
+package cloudfit.application;
 
 import cloudfit.util.Number160;
 import java.io.Serializable;

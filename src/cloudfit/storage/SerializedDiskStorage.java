@@ -10,7 +10,6 @@
  * 
  * *************************************************************** *
  */
-
 package cloudfit.storage;
 
 import java.io.BufferedInputStream;
@@ -31,17 +30,19 @@ import java.util.logging.Logger;
 
 /**
  * Basic storage implementation that stores the data as Java serialized objects
+ *
  * @author Luiz Angelo STEFFENEL <Luiz-Angelo.Steffenel@univ-reims.fr>
  */
 public class SerializedDiskStorage implements StorageAdapterInterface {
 
     /**
      * Stores the given data in a filename "key"
+     *
      * @param key
-     * @param value 
+     * @param value
      */
     @Override
-    public void save(Serializable value, String...keys) {
+    public void save(Serializable value, String... keys) {
         try {
             //use buffering
             OutputStream file = new FileOutputStream(keys[0]);
@@ -58,21 +59,23 @@ public class SerializedDiskStorage implements StorageAdapterInterface {
         }
 
     }
-    
+
     /**
      * Stores the given data in a filename "key"
+     *
      * @param key
-     * @param value 
+     * @param value
      */
     @Override
-    public void blocking_save(Serializable value, String...keys) {
-        this.save(value,keys);
+    public void blocking_save(Serializable value, String... keys) {
+        this.save(value, keys);
     }
 
     /**
      * reads the file named "key"
+     *
      * @param key
-     * @return 
+     * @return
      */
     @Override
     public Serializable read(String key[]) {
@@ -99,10 +102,11 @@ public class SerializedDiskStorage implements StorageAdapterInterface {
 
     /**
      * erases the file named "key"
-     * @param key 
+     *
+     * @param key
      */
     @Override
-    public void remove(String...key) {
+    public void remove(String... key) {
         File file = new File(key[0]);
         if (file.delete()) {
             System.err.println(file.getName() + " is deleted!");

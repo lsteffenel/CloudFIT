@@ -17,7 +17,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * collects the total number of cores 
+ * collects the total number of cores
+ *
  * @author kirsch
  */
 public class TotalProcessorsCollector extends AbstractOSCollector {
@@ -39,13 +40,11 @@ public class TotalProcessorsCollector extends AbstractOSCollector {
     public boolean checkValue(Serializable value) {
         List<Double> procs = this.collect();
         Double nbprocs = procs.get(0);
-        if ((Double)value <= nbprocs) {
+        if ((Double) value <= nbprocs) {
             return true;
-        }
-        else
-        {
+        } else {
             return false;
         }
     }
-    
+
 }

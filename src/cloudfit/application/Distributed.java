@@ -68,7 +68,6 @@ public abstract class Distributed implements ApplicationInterface, Serializable 
         return args;
     }
 
-    
     /**
      * Finalizes the consumer, returing its accumulator. This method is
      * <i>optional</i>.
@@ -77,7 +76,7 @@ public abstract class Distributed implements ApplicationInterface, Serializable 
         // do nothing here, it's optional
         return null;
     }
-    
+
     /* ------------------------------------------------------------------------- */
     /**
      * Obtention de la valeur de l'accumulateur. Cette methode est disponible
@@ -113,24 +112,22 @@ public abstract class Distributed implements ApplicationInterface, Serializable 
     }
 
     @Override
-    public void save(int tasknumber, Serializable obj, String...keys) {
-            DHTStorageUnit dsu = new DHTStorageUnit(threadSolve.getJobId(), tasknumber, obj);
-            threadSolve.save(dsu, keys);
+    public void save(int tasknumber, Serializable obj, String... keys) {
+        DHTStorageUnit dsu = new DHTStorageUnit(threadSolve.getJobId(), tasknumber, obj);
+        threadSolve.save(dsu, keys);
     }
 
     /**
      * Reads a serialized object using the StorageAdapter.
      */
     @Override
-    public Serializable read(String...key) {
+    public Serializable read(String... key) {
         return threadSolve.read(key);
     }
 
     @Override
-    public void remove(String...key) {
+    public void remove(String... key) {
         threadSolve.remove(key);
     }
-   
-    
-    
+
 }

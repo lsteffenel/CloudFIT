@@ -10,7 +10,6 @@
  * 
  * *************************************************************** *
  */
-
 package cloudfit.network;
 
 import cloudfit.core.Message;
@@ -20,29 +19,32 @@ import rice.p2p.commonapi.NodeHandle;
 
 /**
  * Envelope to send messages through EasyPastry->Pastry
+ *
  * @author Luiz Angelo STEFFENEL <Luiz-Angelo.Steffenel@univ-reims.fr>
  */
 public class EasyPastryContent extends CastContent {
 
     private Message msg;
     private NodeHandle dest;
-    
-   
 
     /**
-     * Constructor of the class. 
-     * @param subject the "identifier" required by EasyPastry, @see EasyPastryAdapter
-     * @param msg the protocol layer message to encapsulate on EasyPastry messages
+     * Constructor of the class.
+     *
+     * @param subject the "identifier" required by EasyPastry, @see
+     * EasyPastryAdapter
+     * @param msg the protocol layer message to encapsulate on EasyPastry
+     * messages
      */
     public EasyPastryContent(String subject, Message msg) {
         super(subject);
         this.msg = msg;
         this.dest = null;
-   }
+    }
 
     /**
      * Obtains destination of the message
-     * @return the NodeHandle that identifies the destination 
+     *
+     * @return the NodeHandle that identifies the destination
      */
     public NodeHandle getDest() {
         return dest;
@@ -50,6 +52,7 @@ public class EasyPastryContent extends CastContent {
 
     /**
      * Sets the destination of the message
+     *
      * @param dest The NodeHandle that corresponds to the destination
      */
     public void setDest(NodeHandle dest) {
@@ -58,6 +61,7 @@ public class EasyPastryContent extends CastContent {
 
     /**
      * Gets the content of the EasyPastry message
+     *
      * @return the protocol-level message
      */
     public Message getContent() {

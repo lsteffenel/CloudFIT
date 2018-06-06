@@ -20,21 +20,21 @@ public class PastSaveContinuation implements Continuation<Boolean[], Exception> 
     private boolean success = false;
     private final Lock lock = new ReentrantLock();
     private final Condition notEmpty = lock.newCondition();
-    
+
     @Override
     public void receiveResult(Boolean[] results) {
-        
+
         lock.lock();
         try {
-           
+
             int numSuccessfulStores = 0;
-                for (int ctr = 0; ctr < results.length; ctr++) {
-                    if (results[ctr].booleanValue()) {
-                        numSuccessfulStores++;
-                    }
+            for (int ctr = 0; ctr < results.length; ctr++) {
+                if (results[ctr].booleanValue()) {
+                    numSuccessfulStores++;
                 }
-                System.err.println(" successfully stored at "+ numSuccessfulStores + " locations.");
-            
+            }
+            System.err.println(" successfully stored at " + numSuccessfulStores + " locations.");
+
             finished = true;
             success = true;
             notEmpty.signal();
@@ -45,8 +45,7 @@ public class PastSaveContinuation implements Continuation<Boolean[], Exception> 
 
     @Override
     public void receiveException(Exception result) {
-        
-        
+
         lock.lock();
         try {
             finished = true;
@@ -59,16 +58,15 @@ public class PastSaveContinuation implements Continuation<Boolean[], Exception> 
         }
     }
 
-    
     public boolean wait_save() throws InterruptedException {
         lock.lock();
         try {
-        
+
             while (finished == false) {
                 //System.err.println("waiting");
                 notEmpty.await();
             }
-                System.err.println("done "+success);
+            System.err.println("done " + success);
 //      
         } catch (InterruptedException ex) {
             // interrupted, probably because the thread was "terminated"

@@ -17,36 +17,34 @@ import java.io.Serializable;
 import java.net.InetSocketAddress;
 
 /**
- * 
+ *
  * @author Luiz Angelo STEFFENEL <Luiz-Angelo.Steffenel@univ-reims.fr>
  */
 public class StateRequestMessage implements Serializable {
+
     //private InetSocketAddress sin = null;
     private Number160 JobID = null;
-    
+
     public StateRequestMessage(Number160 JobID) {
         this.JobID = JobID;
     }
-    
+
 //    public StateRequestMessage(InetSocketAddress add, int JobID) {
 //        sin = add;
 //        this.JobID = JobID;
 //    }
-
     /**
      * @return the sin
      */
 //    public InetSocketAddress getSin() {
 //        return sin;
 //    }
-
     /**
      * @param sin the sin to set
      */
 //    public void setSin(InetSocketAddress sin) {
 //        this.sin = sin;
 //    }
-
     /**
      * @return the JobID
      */
@@ -60,9 +58,5 @@ public class StateRequestMessage implements Serializable {
     public void setJobID(Number160 JobID) {
         this.JobID = JobID;
     }
-    
-    
-    
-    
-    
+
 }

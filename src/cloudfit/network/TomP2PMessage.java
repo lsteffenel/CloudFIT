@@ -1,6 +1,5 @@
 package cloudfit.network;
 
-
 import java.io.Serializable;
 import net.tomp2p.peers.Number160;
 
@@ -9,22 +8,20 @@ import net.tomp2p.peers.Number160;
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
 /**
  *
  * @author Luiz Angelo STEFFENEL <Luiz-Angelo.Steffenel@univ-reims.fr>
  */
-public class TomP2PMessage implements Serializable{
-    
+public class TomP2PMessage implements Serializable {
+
     public static int UNICAST = 0;
     public static int BCAST = 1;
     private int type; // 0 = unicast, 1 = bcast
     private Number160 senderId;
     private long sequenceNumber;
     private Serializable content;
-    
-    public TomP2PMessage(int type, Number160 senderId, long sequenceNumber, Serializable content)
-    {
+
+    public TomP2PMessage(int type, Number160 senderId, long sequenceNumber, Serializable content) {
         this.type = type;
         this.senderId = senderId;
         this.sequenceNumber = sequenceNumber;
@@ -46,7 +43,7 @@ public class TomP2PMessage implements Serializable{
     public void setSequenceNumber(long seqnum) {
         this.sequenceNumber = seqnum;
     }
-    
+
     public Serializable getContent() {
         return content;
     }
@@ -62,7 +59,5 @@ public class TomP2PMessage implements Serializable{
     public void setType(int type) {
         this.type = type;
     }
-    
-    
-    
+
 }
