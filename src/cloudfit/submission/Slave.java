@@ -110,48 +110,43 @@ public class Slave {
     }
 
     private static void initNetwork(InetSocketAddress peer) {
-        ///////////////////// Pastry
-
-        /* Declaration of the main class
-         * all the internal initialization is made on the constructor
-         */
-        TDTR = (CoreORB) TheBigFactory.getORB();
-
-
-        /* Define if connecting to a peer or network discovery
-         * 
-         */
-        CoreQueue queue = TheBigFactory.getCoreQueue();
-
-        TDTR.setQueue(queue);
-
-        /* Creates a ressource Manager
-         */
-        JobsScheduler js = TheBigFactory.getJS();
-        RessourceManager rm = TheBigFactory.getRM(js);
-
-        //NetworkAdapterInterface P2P = new EasyPastryDHTAdapter(queue, peer, community);
-        NetworkAdapterInterface P2P = new TomP2PAdapter(queue, peer);
-
-        TDTR.setNetworkAdapter(P2P);
-
-        /* creates a module to plug on the main class
-         * and subscribe it to the messaging system
-         */
-        community = TheBigFactory.getCommunity(scopeName, TDTR, rm);
-
-        TDTR.subscribe(community);
-
-        if (!scopeName.equals("vlan0")) {
-            // also creates a default community for "nameless" jobs
-            Community vlan0 = TheBigFactory.getCommunity("vlan0", TDTR, rm);
-            TDTR.subscribe(vlan0);
-        }
-
-        //TDTR.setStorage(new SerializedDiskStorage());
-        TDTR.setStorage((StorageAdapterInterface) P2P);
-
-        System.err.println("starting network");
+        
+        community = TheBigFactory.initNetwork(peer, scopeName);
+//        ///////////////////// Pastry
+//
+//        /* Declaration of the main class
+//         * all the internal initialization is made on the constructor
+//         */
+//        TDTR = (CoreORB) TheBigFactory.getORB();
+//
+//
+//        /* Creates a ressource Manager
+//         */
+//        JobsScheduler js = TheBigFactory.getJS();
+//        RessourceManager rm = TheBigFactory.getRM(js);
+//
+//        //NetworkAdapterInterface P2P = new EasyPastryDHTAdapter(queue, peer, community);
+//        NetworkAdapterInterface P2P = new TomP2PAdapter(TDTR.getQueue(), peer);
+//
+//        TDTR.setNetworkAdapter(P2P);
+//
+//        /* creates a module to plug on the main class
+//         * and subscribe it to the messaging system
+//         */
+//        community = TheBigFactory.getCommunity(scopeName, TDTR, rm);
+//
+//        TDTR.subscribe(community);
+//
+//        if (!scopeName.equals("vlan0")) {
+//            // also creates a default community for "nameless" jobs
+//            Community vlan0 = TheBigFactory.getCommunity("vlan0", TDTR, rm);
+//            TDTR.subscribe(vlan0);
+//        }
+//
+//        //TDTR.setStorage(new SerializedDiskStorage());
+//        TDTR.setStorage((StorageAdapterInterface) P2P);
+//
+//        System.err.println("starting network");
 
     }
 

@@ -5,7 +5,11 @@
  */
 package cloudfit.core;
 
+import cloudfit.service.JobManagerInterface;
+import cloudfit.service.JobMessage;
 import cloudfit.service.JobsScheduler;
+import cloudfit.service.ServiceInterface;
+import cloudfit.util.Number160;
 import cloudfit.util.PropertiesUtil;
 import static java.lang.Math.min;
 import java.util.HashMap;
@@ -30,7 +34,7 @@ public class RessourceManager implements RessourceManagerInterface {
     public JobsScheduler getJobScheduler() {
         return js;
     }
-
+    
     public RessourceManager(JobsScheduler js) {
         this.js = js;
         // first, get the number of available cores
@@ -96,6 +100,18 @@ public class RessourceManager implements RessourceManagerInterface {
         this.addCollector(new TotalVMMemoryCollector());
         this.addCollector(new TotalProcessorsCollector());
 
+    }
+    
+    public void addJob(JobMessage obj, ServiceInterface comm) {
+        js.addJob(obj, comm);
+    }
+    
+    public JobManagerInterface getJob(Number160 jobId) {
+        return js.getJob(jobId);
+    }
+    
+    public void remove(JobMessage obj) {
+        js.remove(obj);
     }
 
     @Override

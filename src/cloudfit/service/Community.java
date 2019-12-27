@@ -42,7 +42,7 @@ public class Community implements ServiceInterface {
     private String communityName = "vlan0"; // a small joke with the network community
     private ActiveBlockingQueue appQueue = null;
     private ORBInterface router = null;
-    protected JobsScheduler JobsC = null;
+    //protected JobsScheduler JobsC = null;
     private RessourceManagerInterface rm = null;
 
     /**
@@ -56,7 +56,7 @@ public class Community implements ServiceInterface {
         this.communityName = pid;
         this.appQueue = new ActiveBlockingQueue(this.communityName, this);
         this.rm = rm;
-        this.JobsC = rm.getJobScheduler();
+        //this.JobsC = rm.getJobScheduler();
         this.appQueue.start();
         this.router = na;
         //this.JobsC = new JobsScheduler();
@@ -155,7 +155,7 @@ public class Community implements ServiceInterface {
         JobManagerInterface element = null;
         while (element == null) {
 
-            element = JobsC.getJob(waitingJobId);
+            element = rm.getJob(waitingJobId);
 
             try {
                 Thread.sleep(1000);
@@ -172,7 +172,7 @@ public class Community implements ServiceInterface {
 
     public int probeJob(Number160 waitingJob) {
         JobManagerInterface element = null;
-        element = JobsC.getJob(waitingJob);
+        element = rm.getJob(waitingJob);
         if (element != null) {
             return element.getStatus();
         }
@@ -227,27 +227,29 @@ public class Community implements ServiceInterface {
         if (obj.getJobId() == null) {
             System.err.println("JobId = null");
         } else {
+
             JobManagerInterface element = null;
-            element = JobsC.getJob(obj.getJobId());
+            element = rm.getJob(obj.getJobId());
 
             if (element == null) {
                 // new version (it's the container that instantiate the solver)
                 System.err.println("Adding job" + obj.getJobId());
-                JobsC.addJob(obj, this);
+                rm.addJob(obj, this);
 
             } else {
                 //System.out.println("known element");
                 if (obj.isDelete()) {
-                    JobsC.remove(obj);
+                    rm.remove(obj);
                     System.err.println("Removing job");
                 }
             }
+
         }
     }
 
     protected void TaskMessageStatusHandler(TaskStatusMessage obj) {
         JobManagerInterface element = null;
-        element = JobsC.getJob(obj.getJobId());
+        element = rm.getJob(obj.getJobId());
 
         if (element == null) { // message from a Job I don't know -> join!!!!
             System.err.println("UNKNOWN JOB " + obj.getJobId() + "-->  JOIN!!!");
@@ -263,11 +265,11 @@ public class Community implements ServiceInterface {
 
     private void StatusRequestHandler(StateRequestMessage obj) {
         Number160 jid = obj.getJobID();
-        if (JobsC.getJob(jid) != null) {
+        if (rm.getJob(jid) != null) {
             //if (JobsC.getJob(jid).getStatus() > JobManagerInterface.NEW) {
             System.err.println("####### receiving a state transfer request");
             //StateReplyMessage reply = new StateReplyMessage(JobsC.getJob(obj.getJobID()).getJobMessage());
-            JobManagerInterface delayed = JobsC.getJob(obj.getJobID());
+            JobManagerInterface delayed = rm.getJob(obj.getJobID());
             JobMessage jm = (JobMessage) delayed.getJobMessage();
 
             this.sendAll(jm, false);
@@ -324,8 +326,9 @@ public class Community implements ServiceInterface {
     }
 
     /**
-     * Method to check if a data is on local storage
-     * key list : (location, domain, content, version) 
+     * Method to check if a data is on local storage key list : (location,
+     * domain, content, version)
+     *
      * @param keys
      * @return boolean (True if local)
      */
@@ -350,7 +353,7 @@ public class Community implements ServiceInterface {
      */
     public boolean needData(Number160 jobId, int taskId) {
         JobManagerInterface job = null;
-        job = JobsC.getJob(jobId);
+        job = rm.getJob(jobId);
         if (job != null) {
             return job.needData(jobId, taskId);
         } else {
@@ -359,7 +362,7 @@ public class Community implements ServiceInterface {
     }
 
     public boolean hasJob(Number160 jobId) {
-        if (JobsC.getJob(jobId) == null) {
+        if (rm.getJob(jobId) == null) {
             return false;
         } else {
             return true;
@@ -376,7 +379,7 @@ public class Community implements ServiceInterface {
      */
     public boolean hasData(Number160 jobId, int taskId) {
         JobManagerInterface job = null;
-        job = JobsC.getJob(jobId);
+        job = rm.getJob(jobId);
         if (job != null) {
             return job.hasData(jobId, taskId);
         } else {
@@ -394,7 +397,7 @@ public class Community implements ServiceInterface {
      */
     public Serializable getData(Number160 jobId, int taskId) {
         JobManagerInterface job = null;
-        job = JobsC.getJob(jobId);
+        job = rm.getJob(jobId);
         if (job != null) {
             return job.getTaskValue(jobId, taskId);
         } else {
@@ -409,7 +412,7 @@ public class Community implements ServiceInterface {
      * @return JobsScheduler
      */
     public JobsScheduler getCurrentState() {
-        return JobsC;
+        return rm.getJobScheduler();
     }
 
     public ArrayList<String> saveSrc(String src) {

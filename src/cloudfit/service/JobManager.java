@@ -25,7 +25,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Properties;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutorService;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
@@ -42,7 +41,6 @@ public class JobManager implements JobManagerInterface {
     private int status = 0; // -1 = stateTransfer, 0 = new, 1 = running, 2 = finished
     private boolean Finished = false;
     private Serializable Accumulator = null;
-    private ExecutorService executor;
     private ApplicationInterface jobClass;
     private ServiceInterface service;
     private TaskScheduler scheduler;

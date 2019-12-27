@@ -32,7 +32,7 @@ public class JobMessage implements Serializable {
     private boolean delete = false;
     private String app = null;
     private Properties reqs = null;
-
+    
     public String getJar() {
         return jar;
     }

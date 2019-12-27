@@ -28,9 +28,17 @@ import java.util.logging.Logger;
  */
 public class CoreORB implements ORBInterface {
 
+    
+
     private CoreQueue cq = null;
     private NetworkAdapterInterface P2P = null;
     private StorageAdapterInterface storage = null;
+    
+    public CoreORB() {
+        CoreQueue queue = new CoreQueue();
+        queue.start();
+        this.setQueue(queue);
+    }
 
     /**
      * Associates a CoreQueue object to this CoreORB
@@ -39,6 +47,14 @@ public class CoreORB implements ORBInterface {
      */
     public void setQueue(CoreQueue core) {
         this.cq = core;
+    }
+    
+    /**
+     * Returns the CoreQueue object to associate it with the network
+     *
+     */
+    public CoreQueue getQueue() {
+        return cq;
     }
 
     /**

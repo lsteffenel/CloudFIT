@@ -51,11 +51,6 @@ public class TheBigFactory {
         return new CoreORB();
     }
 
-    public static CoreQueue getCoreQueue() {
-        CoreQueue queue = new CoreQueue();
-        queue.start();
-        return queue;
-    }
 
     public static NetworkAdapterInterface getP2P(CoreQueue queue, InetSocketAddress peer) {
 
@@ -88,21 +83,13 @@ public class TheBigFactory {
          */
         CoreORB TDTR = (CoreORB) getORB();
 
-
-        /* Define if connecting to a peer or network discovery
-         * 
-         */
-        CoreQueue queue = getCoreQueue();
-
-        TDTR.setQueue(queue);
-
         /* Creates a ressource Manager
          */
         JobsScheduler js = new JobsScheduler();
         RessourceManager rm = getRM(js);
 
         //NetworkAdapterInterface P2P = new EasyPastryDHTAdapter(queue, peer, community);
-        NetworkAdapterInterface P2P = new TomP2PAdapter(queue, peer);
+        NetworkAdapterInterface P2P = new TomP2PAdapter(TDTR.getQueue(), peer);
 
         TDTR.setNetworkAdapter(P2P);
 

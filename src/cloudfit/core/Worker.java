@@ -76,7 +76,7 @@ public class Worker extends Thread {
                         //log.log(Level.FINE, "task i {0}:{1}", new Object[]{taskId.getJobId(),taskId.getTaskId()});
                         //System.out.println("Starting "+taskId.getTaskId());
                         //System.err.println("running " + this.jobClass);
-                        Serializable serRes = solve(taskId);
+                        Serializable serRes =   solve(taskId);
                         //System.out.println("Ending "+taskId.getTaskId());
                         long end = System.currentTimeMillis();
                         //log.log(Level.FINE, "task {0}:{1} {2} {3} ({4})", new Object[]{taskId.getJobId(), taskId.getTaskId(), Long.toString(init), Long.toString(end), new Long(end - init)});
@@ -104,7 +104,7 @@ public class Worker extends Thread {
 
                 }
             } else {
-                System.err.println("pack vazio");
+                System.err.println("empty working pack");
                 try {
                     //System.err.println("returned null");
                     Thread.sleep(1000);

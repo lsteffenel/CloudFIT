@@ -203,42 +203,35 @@ public class Submitter {
     }
 
     private static void initNetwork(InetSocketAddress peer) {
-        ///////////////////// Pastry
-
-        /* Declaration of the main class
-         * all the internal initialization is made on the constructor
-         */
-        TDTR = (CoreORB) TheBigFactory.getORB();
-
-
-        /* Define if connecting to a peer or network discovery
-         * 
-         */
-        CoreQueue queue = TheBigFactory.getCoreQueue();
-
-        TDTR.setQueue(queue);
-
-        /* Creates a ressource Manager
-         */
-        JobsScheduler js = TheBigFactory.getJS();
-        RessourceManager rm = TheBigFactory.getRM(js);
-
-        /* creates a module to plug on the main class
-         * and subscribe it to the messaging system
-         */
-        community = TheBigFactory.getCommunity("1", TDTR, rm);
-
-        //NetworkAdapterInterface P2P = new EasyPastryDHTAdapter(queue, peer, community);
-        NetworkAdapterInterface P2P = new TomP2PAdapter(queue, peer);
-
-        TDTR.setNetworkAdapter(P2P);
-
-        TDTR.subscribe(community);
-
-        //TDTR.setStorage(new SerializedDiskStorage());
-        TDTR.setStorage((StorageAdapterInterface) P2P);
-
-        System.err.println("starting network");
+        community=TheBigFactory.initNetwork(peer, "1");
+//        ///////////////////// Pastry
+//
+//        /* Declaration of the main class
+//         * all the internal initialization is made on the constructor
+//         */
+//        TDTR = (CoreORB) TheBigFactory.getORB();
+//
+//        /* Creates a ressource Manager
+//         */
+//        JobsScheduler js = TheBigFactory.getJS();
+//        RessourceManager rm = TheBigFactory.getRM(js);
+//
+//        /* creates a module to plug on the main class
+//         * and subscribe it to the messaging system
+//         */
+//        community = TheBigFactory.getCommunity("1", TDTR, rm);
+//
+//        //NetworkAdapterInterface P2P = new EasyPastryDHTAdapter(queue, peer, community);
+//        NetworkAdapterInterface P2P = new TomP2PAdapter(TDTR.getQueue(), peer);
+//
+//        TDTR.setNetworkAdapter(P2P);
+//
+//        TDTR.subscribe(community);
+//
+//        //TDTR.setStorage(new SerializedDiskStorage());
+//        TDTR.setStorage((StorageAdapterInterface) P2P);
+//
+//        System.err.println("starting network");
 
     }
 
