@@ -58,7 +58,7 @@ public interface ORBInterface {
      * @param key
      * @param value
      */
-    public void save(Serializable value, String... keys);
+    public void save(Serializable value, Serializable... keys);
 
     /**
      * Method to write a data entry on the storage, waiting to return
@@ -66,7 +66,7 @@ public interface ORBInterface {
      * @param keys
      * @param value
      */
-    public void blocking_save(Serializable value, String... keys);
+    public void blocking_save(Serializable value, Serializable... keys);
 
     /**
      * Method to read a data from the storage
@@ -74,7 +74,7 @@ public interface ORBInterface {
      * @param keys
      * @return the data corresponding to the key
      */
-    public Serializable read(String... keys);
+    public Serializable read(Serializable... keys);
 
     /**
      * Method to check if a data is on local storage
@@ -82,14 +82,14 @@ public interface ORBInterface {
      * @param keys
      * @return boolean (True if local)
      */
-    public boolean contains(String... keys);
+    public boolean contains(Serializable... keys);
 
     /**
      * Removes the value under the key identification from the storage
      *
      * @param keys the key that identifies the data to be stored
      */
-    public void remove(String... keys);
+    public void remove(Serializable... keys);
 
     public String getPeerID();
 }

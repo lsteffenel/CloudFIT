@@ -42,10 +42,10 @@ public class SerializedDiskStorage implements StorageAdapterInterface {
      * @param value
      */
     @Override
-    public void save(Serializable value, String... keys) {
+    public void save(Serializable value, Serializable... keys) {
         try {
             //use buffering
-            OutputStream file = new FileOutputStream(keys[0]);
+            OutputStream file = new FileOutputStream((String)keys[0]);
             OutputStream buffer = new BufferedOutputStream(file);
             ObjectOutput output = new ObjectOutputStream(buffer);
             try {
@@ -67,7 +67,7 @@ public class SerializedDiskStorage implements StorageAdapterInterface {
      * @param value
      */
     @Override
-    public void blocking_save(Serializable value, String... keys) {
+    public void blocking_save(Serializable value, Serializable... keys) {
         this.save(value, keys);
     }
 
@@ -78,11 +78,11 @@ public class SerializedDiskStorage implements StorageAdapterInterface {
      * @return
      */
     @Override
-    public Serializable read(String key[]) {
+    public Serializable read(Serializable key[]) {
         Serializable element = null;
         try {
             //use buffering
-            InputStream file = new FileInputStream(key[0]);
+            InputStream file = new FileInputStream((String)key[0]);
             InputStream buffer = new BufferedInputStream(file);
             ObjectInput input = new ObjectInputStream(buffer);
             try {
@@ -106,8 +106,8 @@ public class SerializedDiskStorage implements StorageAdapterInterface {
      * @param key
      */
     @Override
-    public void remove(String... key) {
-        File file = new File(key[0]);
+    public void remove(Serializable... key) {
+        File file = new File((String)key[0]);
         if (file.delete()) {
             System.err.println(file.getName() + " is deleted!");
         } else {
@@ -116,7 +116,7 @@ public class SerializedDiskStorage implements StorageAdapterInterface {
     }
 
     @Override
-    public boolean contains(String... keys) {
+    public boolean contains(Serializable... keys) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 }

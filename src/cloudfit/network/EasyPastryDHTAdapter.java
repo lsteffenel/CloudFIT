@@ -331,9 +331,9 @@ public class EasyPastryDHTAdapter implements NetworkAdapterInterface, StorageAda
      * @param value the value
      */
     @Override
-    public void save(Serializable value, String... keys) {
+    public void save(Serializable value, Serializable... keys) {
 
-        final String fkey = keys[0];
+        final String fkey = (String)keys[0];
         final Serializable fvalue = value;
         boolean mutable = false;
         if (mutable) {
@@ -442,9 +442,9 @@ public class EasyPastryDHTAdapter implements NetworkAdapterInterface, StorageAda
      * @param value the value
      */
     @Override
-    public void blocking_save(Serializable value, String... key) {
+    public void blocking_save(Serializable value, Serializable... key) {
 
-        final String fkey = key[0];
+        final String fkey = (String)key[0];
         final Serializable fvalue = value;
         lock.lock();
         //blocking_save_normal(key, value);
@@ -520,8 +520,8 @@ public class EasyPastryDHTAdapter implements NetworkAdapterInterface, StorageAda
      * @return the data, or null if nothing under this key
      */
     @Override
-    public Serializable read(String... key) {
-        return read_normal(key[0]);
+    public Serializable read(Serializable... key) {
+        return read_normal((String)key[0]);
         //return read_version(key);
     }
 
@@ -547,7 +547,7 @@ public class EasyPastryDHTAdapter implements NetworkAdapterInterface, StorageAda
      * @param key the data identifier
      */
     @Override
-    public void remove(String... key) {
+    public void remove(Serializable... key) {
 //        try {
 //            if (dht == null) {
 //                initDHT(context);
@@ -558,10 +558,12 @@ public class EasyPastryDHTAdapter implements NetworkAdapterInterface, StorageAda
 //            Logger.getLogger(PastrySocketAdapter.class
 //                    .getName()).log(Level.SEVERE, null, ex);
 //        }
+    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    
     }
 
     @Override
-    public boolean contains(String... keys) {
+    public boolean contains(Serializable... keys) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 

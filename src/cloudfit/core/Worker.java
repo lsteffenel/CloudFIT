@@ -47,10 +47,14 @@ public class Worker extends Thread {
 //    } 
     @Override
     public void run() {
+        
+        System.err.println("Worker starting");
 
         while (true) {
             WorkData pack = RM.getWork();
             if (pack != null) {
+                //System.err.println("pack nao vazio");
+                
                 this.thrSolver = pack.thrSolver;
                 this.jobClass = pack.app;
                 this.taskId = pack.taskId;
@@ -59,6 +63,7 @@ public class Worker extends Thread {
                 //while (taskId != null && thrSolver.getStatus()!=JobManagerInterface.COMPLETED) { // getWork returns null when there is no more tasks to execute or if the Job is finished
                 if (taskId != null && thrSolver.getStatus() != JobManagerInterface.COMPLETED) { // getWork returns null when there is no more tasks to execute or if the Job is finished
 //            try {
+                    //System.err.println("entrou aqui worker");
                     if (taskId.getStatus() != TaskStatus.COMPLETED) {
 
                         taskId.setStatus(TaskStatus.STARTED);
@@ -70,6 +75,7 @@ public class Worker extends Thread {
                         long init = System.currentTimeMillis();
                         //log.log(Level.FINE, "task i {0}:{1}", new Object[]{taskId.getJobId(),taskId.getTaskId()});
                         //System.out.println("Starting "+taskId.getTaskId());
+                        //System.err.println("running " + this.jobClass);
                         Serializable serRes = solve(taskId);
                         //System.out.println("Ending "+taskId.getTaskId());
                         long end = System.currentTimeMillis();
@@ -84,7 +90,7 @@ public class Worker extends Thread {
                                 Number160 jbId = taskId.getJobId();
                                 int tkId = taskId.getTaskId();
 
-                                // the tkResult will be split from the messag in the thrSolver to be stored in the DHT
+                                // the tkResult will be split from the message in the thrSolver to be stored in the DHT
                                 TaskStatusMessage tm = new TaskStatusMessage(jbId, tkId, TaskStatus.COMPLETED, serRes);
                                 thrSolver.setTaskValue(tm, true);
                                 //System.err.println("Task " + tkId + " done");
@@ -98,6 +104,7 @@ public class Worker extends Thread {
 
                 }
             } else {
+                System.err.println("pack vazio");
                 try {
                     //System.err.println("returned null");
                     Thread.sleep(1000);

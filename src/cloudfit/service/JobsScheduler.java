@@ -87,6 +87,7 @@ public class JobsScheduler implements Serializable {
             JM.setOriginalMsg(obj);
 
             Jobs.add(JM);
+            System.err.println("new job inserted (1)");
         } else { // submission through an external jobClass (jar)
             try {
                 String jarFile = obj.getJar();
@@ -115,7 +116,7 @@ public class JobsScheduler implements Serializable {
                     }
                     JM.setOriginalMsg(obj);
                     Jobs.add(JM);
-                    System.err.println("new job inserted");
+                    System.err.println("new job inserted (2)");
 
                 } else {
                     System.out.println("Jar file not found");
@@ -144,7 +145,7 @@ public class JobsScheduler implements Serializable {
 
     public synchronized WorkData getWork() {
 
-        //System.err.println("getting job ");
+        System.err.println("getting job ");
         //System.err.println("queue size"+ Jobs.size());
         WorkData res = null;
         while (res == null) {
@@ -170,6 +171,7 @@ public class JobsScheduler implements Serializable {
                 Logger.getLogger(JobsScheduler.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
+        
         return null;
     }
 

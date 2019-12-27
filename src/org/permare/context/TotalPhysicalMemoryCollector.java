@@ -21,7 +21,7 @@ import java.util.logging.Logger;
 public class TotalPhysicalMemoryCollector extends AbstractOSCollector {
 
     public static String COLLECTOR_NAME = "Thing.Device.Memory.Physical.Total";
-    public static String COLLECTOR_DESCR = "Total physical memory size (in Kb)";
+    public static String COLLECTOR_DESCR = "Total physical memory size (in MB)";
 
     public TotalPhysicalMemoryCollector() {
         super.setName(COLLECTOR_NAME);
@@ -35,7 +35,7 @@ public class TotalPhysicalMemoryCollector extends AbstractOSCollector {
             com.sun.management.OperatingSystemMXBean bean
                     = (com.sun.management.OperatingSystemMXBean) this.getBean();
 
-            results.add(new Double(bean.getTotalPhysicalMemorySize() / 1024));
+            results.add(new Double(bean.getTotalPhysicalMemorySize() / 1048576));
         } else {
             Logger.getLogger(getClass().getName()).log(Level.INFO,
                     "No current information about physical memory available");
@@ -46,14 +46,30 @@ public class TotalPhysicalMemoryCollector extends AbstractOSCollector {
 
     @Override
     public boolean checkValue(Serializable value) {
-        List<Double> mems = this.collect();
-        // use only VM memory. For other checks, please include more info
-        Double VMmem = mems.get(mems.size() - 1);
-        if ((Double) value <= VMmem) {
-            return true;
-        } else {
-            return false;
+        
+        Double vald = 0.0;
+        String vals = (String)value;
+        if (vals.endsWith("M") || vals.endsWith("m"))
+        {
+            
+            vald = new Double(vals.substring(0, vals.length()-1));
         }
+        if (vals.endsWith("G") || vals.endsWith("g"))
+        {
+            
+            vald = new Double(vals.substring(0, vals.length()-1));
+            vald = vald*1024;
+        }
+        
+        List<Double> mems = this.collect();
+        if (!mems.isEmpty()) {
+            Double VMmem = mems.get(mems.size() - 1);
+            System.out.println(VMmem + " " + vald);
+            if (vald <= VMmem) {
+                return true;
+            }
+        }
+        return false;
     }
 
 }

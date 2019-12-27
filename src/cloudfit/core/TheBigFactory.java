@@ -60,7 +60,8 @@ public class TheBigFactory {
     public static NetworkAdapterInterface getP2P(CoreQueue queue, InetSocketAddress peer) {
 
         //if (select.matches("EasyPastry".toLowerCase())) {
-        return new EasyPastryAdapter(queue, peer);
+        return new TomP2PAdapter(queue, peer);
+        //return new EasyPastryAdapter(queue, peer);
         //}
         //else return null;
     }

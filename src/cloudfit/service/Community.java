@@ -313,13 +313,13 @@ public class Community implements ServiceInterface {
 
     // Storage methods
     @Override
-    public void save(Serializable value, String... keys) {
+    public void save(Serializable value, Serializable... keys) {
         //router.save(key, value);
         router.blocking_save(value, keys);
     }
 
     @Override
-    public Serializable read(String... key) {
+    public Serializable read(Serializable... key) {
         return router.read(key);
     }
 
@@ -330,12 +330,12 @@ public class Community implements ServiceInterface {
      * @return boolean (True if local)
      */
     @Override
-    public boolean contains(String... keys) {
+    public boolean contains(Serializable... keys) {
         return router.contains(keys);
     }
 
     @Override
-    public void remove(String... key) {
+    public void remove(Serializable... key) {
         router.remove(key);
     }
 

@@ -21,13 +21,13 @@ import java.io.Serializable;
  */
 public interface StorageAdapterInterface {
 
-    public void save(Serializable value, String... keys);
+    public void save(Serializable value, Serializable... keys);
 
-    public void blocking_save(Serializable value, String... keys);
+    public void blocking_save(Serializable value, Serializable... keys);
 
-    public boolean contains(String... keys);
+    public boolean contains(Serializable... keys);
 
-    public Serializable read(String... keys);
+    public Serializable read(Serializable... keys);
 
-    public void remove(String... keys);
+    public void remove(Serializable... keys);
 }

@@ -236,9 +236,9 @@ public class EasyPastryAdapter implements NetworkAdapterInterface, StorageAdapte
      * @param value the value
      */
     @Override
-    public void save(Serializable value, String... keys) {
+    public void save(Serializable value, Serializable... keys) {
         try {
-            dht.put(keys[0], value);
+            dht.put((String)keys[0], value);
 
         } catch (DHTException ex) {
             Logger.getLogger(EasyPastryAdapter.class
@@ -253,9 +253,9 @@ public class EasyPastryAdapter implements NetworkAdapterInterface, StorageAdapte
      * @param value the value
      */
     @Override
-    public void blocking_save(Serializable value, String... keys) {
+    public void blocking_save(Serializable value, Serializable... keys) {
         try {
-            dht.put(keys[0], value);
+            dht.put((String)keys[0], value);
 
         } catch (DHTException ex) {
             Logger.getLogger(EasyPastryAdapter.class
@@ -270,9 +270,9 @@ public class EasyPastryAdapter implements NetworkAdapterInterface, StorageAdapte
      * @return the data, or null if nothing under this key
      */
     @Override
-    public Serializable read(String... key) {
+    public Serializable read(Serializable... key) {
         try {
-            return dht.get(key[0]);
+            return dht.get((String)key[0]);
 
         } catch (DHTException ex) {
             Logger.getLogger(EasyPastryAdapter.class
@@ -287,9 +287,9 @@ public class EasyPastryAdapter implements NetworkAdapterInterface, StorageAdapte
      * @param key the data identifier
      */
     @Override
-    public void remove(String... key) {
+    public void remove(Serializable... key) {
         try {
-            dht.remove(key[0]);
+            dht.remove((String)key[0]);
 
         } catch (DHTException ex) {
             Logger.getLogger(EasyPastryAdapter.class
@@ -298,7 +298,7 @@ public class EasyPastryAdapter implements NetworkAdapterInterface, StorageAdapte
     }
 
     @Override
-    public boolean contains(String... keys) {
+    public boolean contains(Serializable... keys) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 

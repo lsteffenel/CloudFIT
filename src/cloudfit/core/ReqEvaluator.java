@@ -5,6 +5,7 @@
  */
 package cloudfit.core;
 
+import java.io.Serializable;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Properties;
@@ -29,7 +30,8 @@ class ReqEvaluator {
             String key = (String) props.nextElement();
 
             if (collectors.containsKey(key)) {
-                Double value = Double.valueOf(reqRessources.getProperty(key));
+                //Double value = Double.valueOf(reqRessources.getProperty(key));
+                Serializable value = reqRessources.getProperty(key);
                 boolean test = collectors.get(key).checkValue(value);
                 //System.out.println(key + " = " + reqRessources.getProperty(key) + " (" + test + ")");
                 if (test == false) {

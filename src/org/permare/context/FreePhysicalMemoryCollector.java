@@ -26,7 +26,7 @@ import java.util.logging.Logger;
 public class FreePhysicalMemoryCollector extends AbstractOSCollector<Double> {
 
     public static String COLLECTOR_NAME = "Thing.Device.Memory.Physical.Available";
-    public static String COLLECTOR_DESCR = "Free physical memory availanle (in Kb)";
+    public static String COLLECTOR_DESCR = "Free physical memory available (in MB)";
 
     public FreePhysicalMemoryCollector() {
         super.setName(COLLECTOR_NAME);
@@ -41,7 +41,7 @@ public class FreePhysicalMemoryCollector extends AbstractOSCollector<Double> {
             com.sun.management.OperatingSystemMXBean bean
                     = (com.sun.management.OperatingSystemMXBean) this.getBean();
 
-            results.add(new Double(bean.getFreePhysicalMemorySize() / 1024));
+            results.add(new Double(bean.getFreePhysicalMemorySize() / 1048576));
         } else {
             Logger.getLogger(getClass().getName()).log(Level.INFO,
                     "No current physical memory information available, getting VM memory.");
@@ -52,10 +52,25 @@ public class FreePhysicalMemoryCollector extends AbstractOSCollector<Double> {
 
     @Override
     public boolean checkValue(Serializable value) {
+        Double vald = 0.0;
+        String vals = (String)value;
+        if (vals.endsWith("M") || vals.endsWith("m"))
+        {
+            
+            vald = new Double(vals.substring(0, vals.length()-1));
+        }
+        if (vals.endsWith("G") || vals.endsWith("g"))
+        {
+            
+            vald = new Double(vals.substring(0, vals.length()-1));
+            vald = vald*1024;
+        }
+        
         List<Double> mems = this.collect();
         if (!mems.isEmpty()) {
             Double VMmem = mems.get(mems.size() - 1);
-            if ((Double) value <= VMmem) {
+            System.out.println(VMmem + " " + vald);
+            if (vald <= VMmem) {
                 return true;
             }
         }

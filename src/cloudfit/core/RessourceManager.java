@@ -67,7 +67,10 @@ public class RessourceManager implements RessourceManagerInterface {
             return true;
         }
         ReqEvaluator eval = new ReqEvaluator(collectors);
-        return eval.checkRequirements(reqRessources);
+        
+        boolean itisok = eval.checkRequirements(reqRessources);
+        System.err.println("requirments =" + itisok);
+        return itisok;
     }
 
     public void addCollector(Collector c) {

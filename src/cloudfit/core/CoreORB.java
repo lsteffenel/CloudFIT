@@ -86,7 +86,7 @@ public class CoreORB implements ORBInterface {
      * @param value the value to store
      */
     @Override
-    public void save(Serializable value, String... keys) {
+    public void save(Serializable value, Serializable... keys) {
         if (storage != null) {
             storage.save(value, keys);
 
@@ -100,7 +100,7 @@ public class CoreORB implements ORBInterface {
      * @param value the value to store
      */
     @Override
-    public void blocking_save(Serializable value, String... keys) {
+    public void blocking_save(Serializable value, Serializable... keys) {
         if (storage != null) {
             storage.blocking_save(value, keys);
             //storage.save(key,value, mutable);
@@ -115,7 +115,7 @@ public class CoreORB implements ORBInterface {
      * @return the value if it exists, or null
      */
     @Override
-    public Serializable read(String... key) {
+    public Serializable read(Serializable... key) {
         if (storage != null) {
             return storage.read(key);
 
@@ -130,7 +130,7 @@ public class CoreORB implements ORBInterface {
      * @param key the key that identifies the data to be stored
      */
     @Override
-    public void remove(String... key) {
+    public void remove(Serializable... key) {
         if (storage != null) {
             storage.remove(key);
 
@@ -138,7 +138,7 @@ public class CoreORB implements ORBInterface {
     }
 
     @Override
-    public boolean contains(String... keys) {
+    public boolean contains(Serializable... keys) {
         if (storage != null) {
             return storage.contains(keys);
 
