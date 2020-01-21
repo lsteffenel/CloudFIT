@@ -67,7 +67,7 @@ public class RessourceManager implements RessourceManagerInterface {
 
     public boolean checkRequirements(Properties reqRessources) {
         if (reqRessources == null) {
-            System.out.println("no requirements to evaluate");
+            System.err.println("no requirements to evaluate");
             return true;
         }
         ReqEvaluator eval = new ReqEvaluator(collectors);

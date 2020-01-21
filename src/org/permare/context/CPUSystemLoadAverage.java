@@ -48,7 +48,8 @@ public class CPUSystemLoadAverage extends AbstractOSCollector<Double> {
         // use only global load. For other checks, please include more info
         if (!loads.isEmpty()) {
             Double load = loads.get(loads.size() - 1);
-            if ((Double) value >= load) {
+            Double dvalue = new Double((String)value);
+            if (load <= dvalue) {
                 return true;
             }
         }

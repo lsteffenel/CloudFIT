@@ -57,9 +57,11 @@ public interface JobManagerInterface extends Serializable {
 
     public void save(Serializable value, String... keys);
 
-    public Serializable read(String... key);
+    public Serializable read(Serializable... key);
 
-    public void remove(String... key);
+    public boolean contains(Serializable... key);
+
+    public void remove(Serializable... key);
 
     public void setOriginalMsg(JobMessage obj);
 

@@ -101,8 +101,10 @@ public interface ApplicationInterface extends Serializable, Cloneable {
     /**
      * Reads a serialized object using the StorageAdapter.
      */
-    public Serializable read(String... key);
+    public Serializable read(Serializable... key);
+    
+    public boolean contains(Serializable... key);
 
-    public void remove(String... key);
+    public void remove(Serializable... key);
 
 }
