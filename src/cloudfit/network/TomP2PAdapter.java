@@ -28,7 +28,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
+import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.tomp2p.connection.Bindings;
@@ -44,10 +47,12 @@ import net.tomp2p.dht.StorageLayer;
 import net.tomp2p.futures.FutureBootstrap;
 import net.tomp2p.futures.FutureDirect;
 import net.tomp2p.futures.FutureDiscover;
+import net.tomp2p.p2p.Peer;
 import net.tomp2p.p2p.PeerBuilder;
 import net.tomp2p.p2p.PostRoutingFilter;
 import net.tomp2p.p2p.RequestP2PConfiguration;
 import net.tomp2p.p2p.SlowPeerFilter;
+import net.tomp2p.p2p.StructuredBroadcastHandler;
 import net.tomp2p.peers.Number160;
 import net.tomp2p.peers.Number640;
 import net.tomp2p.peers.PeerAddress;
@@ -80,13 +85,16 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
 
     PostRoutingFilter spf = null;
 
+    List<PeerAddress> neighs = null;
+
     public Number160 getId() {
         return peer.peerID();
     }
 
     @Override
     public String getPeerID() {
-        return peer.peerID().toString(true);
+        //return peer.peerID().toString(true);
+        return peer.peerID().toString(false);
     }
 
 //    public TomP2PAdapter(CoreQueue queue, InetSocketAddress add, Community comm) {
@@ -243,7 +251,7 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
             IR.addReplicationFilter(new SlowReplicationFilter());
             // Option : choose between a fixed replication factor or autoreplication
             // DEFAULT = replicationFactor(6)
-            IR.replicationFactor(1);
+            IR.replicationFactor(3);
             //IR.autoReplication();
             IR.start();
 
@@ -339,16 +347,24 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
             Runtime.getRuntime().addShutdownHook(new Thread() {
                 public void run() {
                     System.err.println("Shutting down peer");
-                    DBase.commit();
-                    //DBase.getEngine().compact();
-                    DBase.commit();
-                    //DBase.getEngine().clearCache();
-                    DBase.close();
+                    if (DBase != null) {
+                        if (!DBase.isClosed()) {
+                            DBase.commit();
+                            //DBase.getEngine().compact();
+                            //DBase.commit();
+                            //DBase.getEngine().clearCache();
+                            DBase.close();
+                        }
+
+                    }
                     peer.shutdown();
                     System.err.println("Bye!");
                 }
             });
 
+        
+
+        save(peer.peerAddress(), "vlan0", "peers-realm", "vlan0", getPeerID());
 //    
         } catch (UnknownHostException ex) {
             Logger.getLogger(TomP2PAdapter.class.getName()).log(Level.SEVERE, null, ex);
@@ -409,7 +425,7 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
 
                     // try to connect to *somewhere*
                     //socket.connect(new InetSocketAddress("cosy.univ-reims.fr", 80));
-                    socket.socket().connect(new InetSocketAddress("cosy.univ-reims.fr", 80),timeout);
+                    socket.socket().connect(new InetSocketAddress("cosy.univ-reims.fr", 80), timeout);
                 } catch (IOException ex) {
                     //ex.printStackTrace();
                     continue;
@@ -588,25 +604,75 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
 
     @Override
     public void sendAll(Message msg, boolean metoo) {
-        //System.err.println("new SendAll " + msg.content.getClass());
-        List<PeerAddress> neighs = peer.peerBean().peerMap().all();
-        // replace seqnum++ by the timestap: prevents a "reincarnated" node to reuse the same seqnums
+  
+
+//System.err.println("new SendAll " + msg.content.getClass());
+        if (neighs == null) {
+            neighs = peer.peerBean().peerMap().all();
+        } else {
+            List<PeerAddress> neighs2 = peer.peerBean().peerMap().all();
+            Iterator it = neighs2.iterator();
+            while (it.hasNext()) {
+                PeerAddress add = (PeerAddress) it.next();
+                if (!neighs.contains(add)){
+                    neighs.add(add);
+                    System.err.println(add.peerSocketAddress().inetAddress().toString());
+                }
+            }
+            neighs2 = peer.peerBean().peerMap().allOverflow();
+            it = neighs2.iterator();
+            while (it.hasNext()) {
+                PeerAddress add = (PeerAddress) it.next();
+                if (!neighs.contains(add)) {
+                    neighs.add(add);
+                    System.err.println(add.peerSocketAddress().inetAddress().toString());
+                }
+            }
+            
+            ArrayList saved = (ArrayList) read("vlan0", "peers-realm", "vlan0", null);
+            it = saved.iterator();
+            while (it.hasNext()) {
+                PeerAddress add = (PeerAddress) it.next();
+                if (!neighs.contains(add)) {
+                    neighs.add(add);
+                    System.err.println(add.peerSocketAddress().inetAddress().toString());
+                }
+            }
+        }
+        //List<PeerAddress> neighs = peer.peerBean().peerMap().all();
+        System.err.println(neighs.size());
+// replace seqnum++ by the timestap: prevents a "reincarnated" node to reuse the same seqnums
         TomP2PMessage P2Pmsg = new TomP2PMessage(TomP2PMessage.BCAST, peer.peerID(), System.currentTimeMillis(), msg);
         Iterator it = neighs.iterator();
+
         while (it.hasNext()) {
+
             PeerAddress p1 = (PeerAddress) it.next();
             // send direct
             FutureDirect futureData;
             futureData = peer.peer().sendDirect(p1).object(P2Pmsg).start();
             // blocking send one by one... what about a listener after all sends were sent ??
-            //futureData.awaitUninterruptibly();
+            futureData.awaitUninterruptibly();
 
         }
+//            neighs = peer.peerBean().peerMap().allOverflow();
+//            while (it.hasNext()) {
+//
+//                PeerAddress p1 = (PeerAddress) it.next();
+//                // send direct
+//                FutureDirect futureData;
+//                futureData = peer.peer().sendDirect(p1).object(P2Pmsg).start();
+//                // blocking send one by one... what about a listener after all sends were sent ??
+//                futureData.awaitUninterruptibly();
+//
+//            }
+
         if (metoo) {
             PeerAddress p1 = peer.peerAddress();
             FutureDirect futureData;
             futureData = peer.peer().sendDirect(p1).object(P2Pmsg).start();
         }
+
     }
 
     @Override
@@ -757,9 +823,9 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
                             if (keys[0].getClass().equals(String.class
                             )) {
                                 location = Number160.createHash((String) keys[0]);
-                                System.err.println("location = String");
+                                //System.err.println("location = String");
                             } else {
-                                //System.err.println("location = Number160");
+                                System.err.println("location = Number160");
                                 cloudfit.util.Number160 id = (cloudfit.util.Number160) keys[0];
                                 location = new Number160(id.toString());
 
@@ -837,6 +903,7 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
                         break;
                 }
             }
+            System.err.println("savin " + location + " cont " + content);
             //pb = peer.put(location).data(location, domain, content, version, dt);
 
             if (spf != null) {
@@ -869,7 +936,8 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
     @Override
     public boolean contains(Serializable... keys) {
         StorageLayer sl = peer.storageLayer();
-        Number160 location = Number160.ZERO;
+        //Number160 myid = peer.peerID();
+        Number160 location = this.getId();
         Number160 domain = Number160.ZERO;
         Number160 content = Number160.ZERO;
         Number160 version = Number160.ZERO;
@@ -881,8 +949,7 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
             switch (keys.length) {
                 case 1:
                     if (keys[0] != null) {
-                        if (keys[0].getClass().equals(String.class
-                        )) {
+                        if (keys[0].getClass().equals(String.class)) {
                             location = Number160.createHash((String) keys[0]);
                         } else {
                             cloudfit.util.Number160 id = (cloudfit.util.Number160) keys[0];
@@ -917,12 +984,13 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
 
                 case 3:
                     if (keys[0] != null) {
-                        if (keys[0].getClass().equals(String.class
-                        )) {
+                        if (keys[0].getClass().equals(String.class)) {
                             location = Number160.createHash((String) keys[0]);
+                            //System.err.println("xi, entroi nesse");
                         } else {
                             cloudfit.util.Number160 id = (cloudfit.util.Number160) keys[0];
                             location = new Number160(id.toString());
+                            //System.err.println("entroi nesse");
 
                         }
                     }
@@ -988,7 +1056,7 @@ public class TomP2PAdapter implements NetworkAdapterInterface, StorageAdapterInt
                     }
             }
         }
-
+        //System.err.println("reading from "+location + "  "+ domain+ "  "+ content);
         Number640 query = new Number640(location, domain, content, version);
         return sl.contains(query);
     }

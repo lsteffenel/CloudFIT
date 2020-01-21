@@ -39,6 +39,7 @@ public class TaskStatus implements Serializable {
     private int status = 0;
     private Serializable taskResult = null;
     private long lastUpdateTime = 0;
+    private Serializable[] dependencies = null;
 
     /**
      * Constructor of the class
@@ -49,6 +50,13 @@ public class TaskStatus implements Serializable {
     public TaskStatus(Number160 jobId, int num) {
         this.setJobId(jobId);
         this.setTaskId(num);
+        this.dependencies = null;
+    }
+    
+    public TaskStatus(Number160 jobId, int num, Serializable[] deps) {
+        this.setJobId(jobId);
+        this.setTaskId(num);
+        this.dependencies = deps;
     }
 
     /**
@@ -104,6 +112,14 @@ public class TaskStatus implements Serializable {
     public synchronized void setStatus(int status) {
         this.lastUpdateTime = System.currentTimeMillis();
         this.status = status;
+    }
+    
+    /** get the dependency array for the tasks
+     * 
+     * @return 
+     */
+    public Serializable[] getDeps() {
+        return dependencies;
     }
 
     /**

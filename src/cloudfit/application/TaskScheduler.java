@@ -5,6 +5,7 @@
  */
 package cloudfit.application;
 
+import cloudfit.service.JobManager;
 import cloudfit.util.Number160;
 import cloudfit.util.PropertiesUtil;
 import java.io.Serializable;
@@ -22,9 +23,11 @@ public class TaskScheduler {
     //private int completed = 0;
     private int backoff = 10000;
     private boolean weHaveAllResults = false;
+    private JobManager jm = null;
 
-    public TaskScheduler(Number160 jobId, int nbTasks) {
-        startTaskList(jobId, nbTasks);
+    public TaskScheduler(JobManager jm, Number160 jobId, int nbTasks, Serializable[][] depMatrix) {
+        this.jm = jm;
+        startTaskList(jobId, nbTasks, depMatrix);
 
         String prop = PropertiesUtil.getProperty("backoff");
         if (prop != null) {
@@ -32,10 +35,14 @@ public class TaskScheduler {
         }
     }
 
-    private void startTaskList(Number160 jobId, int nbTasks) {
+    private void startTaskList(Number160 jobId, int nbTasks, Serializable[][] depMatrix) {
         taskList = new CopyOnWriteArrayList<TaskStatus>();
         for (int i = 0; i < nbTasks; i++) {
-            taskList.add(new TaskStatus(jobId, i));
+            if (depMatrix == null) {
+                taskList.add(new TaskStatus(jobId, i));
+            } else {
+                taskList.add(new TaskStatus(jobId, i, depMatrix[i]));
+            }
         }
         // We do it 3 times to really "shake" the list and avoid similar list orders
         // TODO this part shold be externalized on a "context scheduler" class
@@ -233,14 +240,24 @@ public class TaskScheduler {
                             currentTask.setStatus(TaskStatus.STARTED_DISTANT);
                             System.err.println("Someone is working on this task (" + currentTask.getTaskId() + "), marking it as \"running somewhere else\"");
                         }
+                    } else {
+                        if (currentTask.getStatus() == TaskStatus.COMPLETED) {
+                            TaskStatusMessage tm = new TaskStatusMessage(currentTask.getJobId(), currentTask.getTaskId(), currentTask.getStatus(), currentTask.getTaskResult());
+                            System.err.println("I got a msg from a lost guy but can't answer back (yet)" + currentTask.getJobId() + " " + currentTask.getTaskId());
+                            jm.sendAll(tm, false);
+
+                        }
                     }
                 } else {
                     if (incomingTask.getStatus() == TaskStatus.COMPLETED) {
 
-                        if (currentTask.getStatus() != TaskStatus.COMPLETED) {
+                        if (currentTask.getStatus() < TaskStatus.COMPLETED) {
+                            System.err.println("task " + currentTask.getTaskId() + " completed elsewhere");
+
                             currentTask.setStatus(TaskStatus.COMPLETED);
                             // 13/01 - only status, not data
                             currentTask.setTaskResult(incomingTask.getTaskValue());
+
                             //System.err.println("New result from others (S): " + currentTask.getTaskId() + "[" + currentTask.getStatus() + "]");
                             //completed++;
                             //System.err.println(incomingTask.getTaskId() + "---> " + done + "/" + taskList.size());
@@ -254,6 +271,15 @@ public class TaskScheduler {
         }
         System.err.println("---> " + done + "/" + taskList.size());
         weHaveAllResults = (done == taskList.size());
+        for (int j = 0; j < taskList.size(); ++j) {
+            if (this.taskList.get(j).getStatus() < TaskStatus.COMPLETED) {
+                System.err.print(this.taskList.get(j).getTaskId() + "[" + this.taskList.get(j).getStatus() + "] - ");
+            }
+        }
+        System.err.println("");
+        if (weHaveAllResults) {
+            System.err.println("we have all results");
+        }
 
         //weHaveAllResults = (completed == taskList.size());
         return weHaveAllResults;

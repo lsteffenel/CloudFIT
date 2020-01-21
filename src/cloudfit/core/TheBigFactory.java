@@ -24,6 +24,7 @@ import cloudfit.service.ServiceInterface;
 import cloudfit.storage.SerializedDiskStorage;
 import cloudfit.storage.StorageAdapterInterface;
 import cloudfit.util.Number160;
+import java.io.Serializable;
 import java.net.InetSocketAddress;
 import java.util.Properties;
 
@@ -65,11 +66,11 @@ public class TheBigFactory {
         return new SerializedDiskStorage();
     }
 
-    public static JobManagerInterface getJobManager(ServiceInterface service, Number160 jobId, ApplicationInterface jobClass, String[] args, Properties props) {
+    public static JobManagerInterface getJobManager(ServiceInterface service, Number160 jobId, ApplicationInterface jobClass, String[] args, Serializable[][] deps, Properties props) {
 //        Class cl = Class.forName("com.bla.TestActivity");
 //        ThreadSolve ts2 = (ThreadSolve)cl.getConstructor(ServiceInterface.class, int.class , ApplicationInterface.class , String.class).newInstance(service, jobId, jobClass, args);
         //ThreadSolve TS = new ThreadSolve(service, jobId, jobClass, args, props);
-        JobManager JM = new JobManager(service, jobId, jobClass, args, props);
+        JobManager JM = new JobManager(service, jobId, jobClass, args, deps, props);
 
         //TS.start();
         return JM;

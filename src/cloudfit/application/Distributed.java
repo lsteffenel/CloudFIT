@@ -121,12 +121,20 @@ public abstract class Distributed implements ApplicationInterface, Serializable 
      * Reads a serialized object using the StorageAdapter.
      */
     @Override
-    public Serializable read(String... key) {
+    public Serializable read(Serializable... key) {
         return threadSolve.read(key);
+    }
+    
+    /**
+     * check if contains a serialized object using the StorageAdapter.
+     */
+    @Override
+    public boolean contains(Serializable... key) {
+        return threadSolve.contains(key);
     }
 
     @Override
-    public void remove(String... key) {
+    public void remove(Serializable... key) {
         threadSolve.remove(key);
     }
 

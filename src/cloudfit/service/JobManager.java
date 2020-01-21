@@ -49,8 +49,9 @@ public class JobManager implements JobManagerInterface {
     private JobMessage obj = null;
     private RessourceManagerInterface RM = null;
     private Properties reqRessources = null;
+    private Serializable[][] depMatrix = null;
 
-    public JobManager(ServiceInterface service, Number160 jobId, ApplicationInterface jobClass, String[] args, Properties requirements) {
+    public JobManager(ServiceInterface service, Number160 jobId, ApplicationInterface jobClass, String[] args, Serializable[][] deps, Properties requirements) {
         try {
             fh = new FileHandler("TestLogging.log", true);
             //fh.setFormatter(new SimpleFormatter());
@@ -69,6 +70,8 @@ public class JobManager implements JobManagerInterface {
         this.jobClass = jobClass;
 
         this.reqRessources = requirements;
+        
+        this.depMatrix = deps;
 
         this.setStatus(NEW);
 
@@ -83,7 +86,7 @@ public class JobManager implements JobManagerInterface {
         //jobClass.initializeApplication();
         jobClass.numberOfBlocks();
         System.err.println("InitNumberofBlocks = " + jobClass.getNumberOfBlocks());
-        scheduler = new TaskScheduler(jobId, jobClass.getNumberOfBlocks());
+        scheduler = new TaskScheduler(this, jobId, jobClass.getNumberOfBlocks(), depMatrix);
 
     }
 
@@ -94,7 +97,7 @@ public class JobManager implements JobManagerInterface {
             RM = service.getRessourceManager();
 
             boolean resourcesMatch = RM.checkRequirements(reqRessources); // check if the requirements match with the CPU/memory/etc 
-            //System.err.println("getting job " + resourcesMatch);
+            System.err.println("getting job " + resourcesMatch);
             if (resourcesMatch) {
 
                 //Thread.currentThread().setName("ThreadSolve " + jobId);
@@ -114,10 +117,11 @@ public class JobManager implements JobManagerInterface {
                     return null;
                 }
             } else {
-                if (getStatus() != STARTED && getStatus() != COMPLETED) {
-                    setStatus(NOMATCH);
+                //if (getStatus() != STARTED && getStatus() != COMPLETED) {
+                    //setStatus(NOMATCH);
+                    //System.err.println("Ressource not match task");
                     return null;
-                }
+                //}
             }
 
         }
@@ -262,12 +266,17 @@ public class JobManager implements JobManagerInterface {
     }
 
     @Override
-    public Serializable read(String... key) {
+    public Serializable read(Serializable... key) {
         return service.read(key);
+    }
+    
+    @Override
+    public boolean contains(Serializable... key) {
+        return service.contains(key);
     }
 
     @Override
-    public void remove(String... key) {
+    public void remove(Serializable... key) {
         service.remove(key);
     }
 

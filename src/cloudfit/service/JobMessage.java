@@ -32,6 +32,7 @@ public class JobMessage implements Serializable {
     private boolean delete = false;
     private String app = null;
     private Properties reqs = null;
+    private Serializable[][] depMatrix = null;
     
     public String getJar() {
         return jar;
@@ -49,6 +50,13 @@ public class JobMessage implements Serializable {
         this.app = app;
     }
 
+    public Serializable[][] getDepMatrix() {
+        return depMatrix;
+    }
+    
+    public void setDepMatrix(Serializable[][] deps) {
+        this.depMatrix = deps;
+    }
     /**
      * Constructor of this class.
      *
@@ -69,6 +77,15 @@ public class JobMessage implements Serializable {
         this.app = app;
         this.args = args;
         this.reqs = reqs;
+    }
+    
+    public JobMessage(Number160 jobId, String jar, String app, String[] args, Serializable[][] deps, Properties reqs) {
+        this.njobId = jobId;
+        this.jar = jar;
+        this.app = app;
+        this.args = args;
+        this.reqs = reqs;
+        this.depMatrix = deps;
     }
 
     public JobMessage(Number160 jobId, boolean delete) {

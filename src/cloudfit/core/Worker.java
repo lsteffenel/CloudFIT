@@ -93,9 +93,10 @@ public class Worker extends Thread {
                                 // the tkResult will be split from the message in the thrSolver to be stored in the DHT
                                 TaskStatusMessage tm = new TaskStatusMessage(jbId, tkId, TaskStatus.COMPLETED, serRes);
                                 thrSolver.setTaskValue(tm, true);
+                                taskId.setStatus(TaskStatus.COMPLETED);
                                 //System.err.println("Task " + tkId + " done");
                                 thrSolver.sendAll(tm, false);
-                                taskId.setStatus(TaskStatus.COMPLETED);
+                                
 
                             }
                         }
@@ -104,7 +105,7 @@ public class Worker extends Thread {
 
                 }
             } else {
-                System.err.println("empty working pack");
+                System.err.println("could not find a feasible task (resources ?)");
                 try {
                     //System.err.println("returned null");
                     Thread.sleep(1000);
@@ -118,7 +119,7 @@ public class Worker extends Thread {
 
     public Serializable solve(TaskStatus taskId) {
 
-        Serializable serRes = jobClass.executeBlock(taskId.getTaskId(), null);
+        Serializable serRes = jobClass.executeBlock(taskId.getTaskId(), taskId.getDeps());
         return serRes;
     }
 }

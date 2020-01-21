@@ -77,9 +77,11 @@ public class JobsScheduler implements Serializable {
         if (obj.getJar() == null) { // regular submission without a jar
             ApplicationInterface jobClass = obj.getJobClass();
             String[] jobargs = obj.getArgs();
+            Serializable[][] deps = obj.getDepMatrix();
+            
             Properties reqs = obj.getReqs();
 
-            JobManagerInterface JM = TheBigFactory.getJobManager(comm, jobId, jobClass, jobargs, reqs);
+            JobManagerInterface JM = TheBigFactory.getJobManager(comm, jobId, jobClass, jobargs, deps, reqs);
             if (obj.getData() != null) {
                 //System.err.println("---->>>>> Accepting "+((CopyOnWriteArrayList<TaskStatus>)obj.getData()).size());
                 JM.setTaskList(obj.getData());
@@ -87,7 +89,7 @@ public class JobsScheduler implements Serializable {
             JM.setOriginalMsg(obj);
 
             Jobs.add(JM);
-            System.err.println("new job inserted (1)");
+            System.err.println("new job inserted (inner class)");
         } else { // submission through an external jobClass (jar)
             try {
                 String jarFile = obj.getJar();
@@ -108,15 +110,17 @@ public class JobsScheduler implements Serializable {
 
                     String[] jobargs = obj.getArgs();
                     Properties reqs = obj.getReqs();
+                    Serializable[][] deps = obj.getDepMatrix();
+                    
 
-                    JobManagerInterface JM = TheBigFactory.getJobManager(comm, jobId, jobClass, jobargs, reqs);
+                    JobManagerInterface JM = TheBigFactory.getJobManager(comm, jobId, jobClass, jobargs, deps, reqs);
                     if (obj.getData() != null) {
                         JM.setTaskList(obj.getData());
 
                     }
                     JM.setOriginalMsg(obj);
                     Jobs.add(JM);
-                    System.err.println("new job inserted (2)");
+                    System.err.println("new job inserted (jar)");
 
                 } else {
                     System.out.println("Jar file not found");

@@ -14,6 +14,7 @@ package cloudfit.service;
 
 import cloudfit.application.TaskStatusMessage;
 import cloudfit.application.ApplicationInterface;
+import cloudfit.application.TaskStatus;
 import cloudfit.core.Message;
 import cloudfit.core.ORBInterface;
 import cloudfit.core.RessourceManagerInterface;
@@ -61,7 +62,7 @@ public class Community implements ServiceInterface {
         this.router = na;
         //this.JobsC = new JobsScheduler();
         //JobsC.start();
-        System.out.println("Community " + communityName + " started !");
+        System.err.println("Community " + communityName + " started !");
     }
 
     public RessourceManagerInterface getRessourceManager() {
@@ -91,8 +92,25 @@ public class Community implements ServiceInterface {
 
         JobMessage jm;
 
-        jm = new JobMessage(null, jar, app, args, reqs);
+        jm = new JobMessage(null, jar, app, args, null, reqs);
 
+        return this.plug(jm);
+    }
+    
+    /**
+     * Method used to submit a job
+     *
+     * @param app the class of the application to run on the submitted job
+     * @param args the application parameters
+     * @return the id of the submission
+     */
+    public Number160 plug(String jar, String app, String[] args, Serializable[][] deps, Properties reqs) {
+
+        
+        JobMessage jm;
+
+        jm = new JobMessage(null, jar, app, args, deps, reqs);
+        
         return this.plug(jm);
     }
 
@@ -257,8 +275,11 @@ public class Community implements ServiceInterface {
 
             this.sendAll(srm, false);
         } else {
-            if (element.getStatus() == element.STARTED) { // the job is still running
+            if (element.getStatus() < element.COMPLETED ) { // the job is still running
+                //if (((TaskStatusMessage)element.getTaskValue(obj.getJobId(),obj.getTaskId())).getStatus()<TaskStatus.COMPLETED) 
+                //    this.sendAll(obj, false);
                 element.setTaskValue(obj, false);
+                
             } // else ignore old message
         }
     }
